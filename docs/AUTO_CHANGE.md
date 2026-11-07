@@ -1,7 +1,7 @@
 # Auto-Change Design (Phase 2)
 
-> **Status: Phase 2 in progress.** This document is the implementation contract for the
-> auto-change/tray phase.
+> **Status: Phase 2 implemented; user verification pending.** This document is the
+> implementation contract for the auto-change/tray phase.
 
 ## Desktop reality
 

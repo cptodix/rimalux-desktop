@@ -16,6 +16,8 @@ import com.cptodix.rimalux.desktop.model.UiSettings
 import com.cptodix.rimalux.desktop.model.WallpaperItem
 import com.cptodix.rimalux.desktop.model.WallpaperSet
 import com.cptodix.rimalux.desktop.platform.AppLog
+import com.cptodix.rimalux.desktop.platform.ApplyResult
+import com.cptodix.rimalux.desktop.platform.AutostartManager
 import com.cptodix.rimalux.desktop.platform.DefaultMonitorProvider
 import com.cptodix.rimalux.desktop.platform.MonitorProvider
 import com.cptodix.rimalux.desktop.platform.PlatformPaths
@@ -25,6 +27,7 @@ import com.cptodix.rimalux.desktop.platform.WallpaperBackendFactory
 import com.cptodix.rimalux.desktop.platform.WallpaperFileStore
 import com.cptodix.rimalux.desktop.platform.openInFileManager
 import com.cptodix.rimalux.desktop.render.SkiaWallpaperRenderer
+import com.cptodix.rimalux.desktop.scheduler.AutoChangePolicy
 import com.cptodix.rimalux.oled.wallpaper.engine.ArtPattern
 import com.cptodix.rimalux.oled.wallpaper.engine.ColorFillMode
 import com.cptodix.rimalux.oled.wallpaper.engine.ColorPalette
@@ -65,6 +68,9 @@ class StudioController(
     private val monitorProvider: MonitorProvider = DefaultMonitorProvider(runner),
     private val backendFactory: WallpaperBackendFactory = WallpaperBackendFactory(runner, paths),
     private val fileStore: WallpaperFileStore = WallpaperFileStore(paths),
+    private val autostartManager: AutostartManager = AutostartManager(paths),
+    private val backendOverride: WallpaperBackend? = null,
+    private val clock: () -> Long = { System.currentTimeMillis() },
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
     private val _uiState = MutableStateFlow(StudioUiState())
@@ -72,6 +78,7 @@ class StudioController(
 
     private val generationMutex = Mutex()
     private val applyMutex = Mutex()
+    private val autoRotationMutex = Mutex()
     private val past = ConcurrentLinkedDeque<WallpaperSet>()
     private val aheadQueue = ConcurrentLinkedDeque<RenderedSet>()
     private val pastRenderedCache = Collections.synchronizedMap(
@@ -82,6 +89,7 @@ class StudioController(
     )
     private var synthesisJob: Job? = null
     private var prefetchJob: Job? = null
+    private var autoChangeJob: Job? = null
     private var configPersistJob: Job? = null
     private var uiPersistJob: Job? = null
     private var deletedPaletteIds: Set<String> = emptySet()
@@ -93,6 +101,7 @@ class StudioController(
 
     init {
         scope.launch { initialize() }
+        startAutoChangeLoop()
     }
 
     private suspend fun initialize() {
@@ -107,7 +116,7 @@ class StudioController(
         past.clear()
         past.addAll(snapshot.history)
         deletedPaletteIds = snapshot.deletedPaletteIds
-        backend = backendFactory.detect(snapshot)
+        backend = backendOverride ?: backendFactory.detect(snapshot)
         val language = AppLanguage.fromTagOrDefault(snapshot.ui.languageTag)
         Locale.setDefault(language.toLocale())
 
@@ -134,6 +143,12 @@ class StudioController(
         } else {
             generateNewSet(pushHistory = false, persist = true)
         }
+
+        if (snapshot.autoChange.runAtLogin) {
+            runCatching { autostartManager.ensureEnabled() }
+                .onFailure { AppLog.warning("Could not restore Start at Login entry", it) }
+        }
+        ensureAutoSchedule()
     }
 
     // ---------------------------------------------------------------------
@@ -288,6 +303,287 @@ class StudioController(
     fun selectNonePalettes() {
         updateConfig(RegenerationMode.RESOLVE) {
             it.copy(selectedPaletteIds = emptySet(), paletteMode = PaletteMode.PALETTE_LIST)
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Auto-change / tray
+    // ---------------------------------------------------------------------
+
+    fun setAutoChangeEnabled(enabled: Boolean) {
+        val state = _uiState.value
+        val now = clock()
+        val interval = AutoChangePolicy.clampIntervalMinutes(state.autoChange.intervalMinutes)
+        val next = if (enabled) {
+            val existing = state.autoChange.nextRunEpochMillis
+            if (AutoChangePolicy.isValidFutureTarget(existing, now, interval)) {
+                existing
+            } else {
+                AutoChangePolicy.nextRunFrom(now, interval)
+            }
+        } else {
+            0L
+        }
+        updateAutoChange(
+            state.autoChange.copy(
+                enabled = enabled,
+                nextRunEpochMillis = next,
+                lastError = null
+            )
+        )
+    }
+
+    fun setAutoInterval(minutes: Int) {
+        val safeMinutes = AutoChangePolicy.clampIntervalMinutes(minutes)
+        val state = _uiState.value
+        val now = clock()
+        val next = if (state.autoChange.enabled) {
+            AutoChangePolicy.nextRunFrom(
+                maxOf(now, state.autoChange.lastRunEpochMillis),
+                safeMinutes
+            )
+        } else {
+            0L
+        }
+        updateAutoChange(
+            state.autoChange.copy(
+                intervalMinutes = safeMinutes,
+                nextRunEpochMillis = next,
+                lastError = null
+            )
+        )
+    }
+
+    fun setRunAtLogin(enabled: Boolean) {
+        val result = autostartManager.setEnabled(enabled)
+        if (result.isSuccess) {
+            updateAutoChange(_uiState.value.autoChange.copy(runAtLogin = enabled))
+        } else {
+            postStatus(
+                UiMessage(
+                    "desktop_autostart_unavailable",
+                    listOf(result.exceptionOrNull()?.localizedMessage ?: "Unavailable")
+                )
+            )
+        }
+    }
+
+    fun setKeepInTray(enabled: Boolean) {
+        updateAutoChange(_uiState.value.autoChange.copy(keepInTray = enabled))
+    }
+
+    fun setAutoTargets(monitorIds: Set<String>) {
+        val display = _uiState.value.display.copy(targetMonitorIds = monitorIds)
+        _uiState.update { it.copy(display = display) }
+        scheduleUiPersist { it.copy(display = display) }
+    }
+
+    fun toggleAutoTargetMonitor(monitorId: String) {
+        val state = _uiState.value
+        val allIds = state.monitors.map { it.id }.toSet()
+        val current = state.display.targetMonitorIds.ifEmpty { allIds }
+        val next = if (monitorId in current) current - monitorId else current + monitorId
+        if (next.isEmpty()) return
+        setAutoTargets(next)
+    }
+
+    fun changeWallpaperNow() {
+        scope.launch { performAutoRotation(force = true) }
+    }
+
+    suspend fun performAutoRotation(force: Boolean): ApplyResult? {
+        return autoRotationMutex.withLock {
+            val state = _uiState.value
+            if (!force && !state.autoChange.enabled) return@withLock null
+            if (state.current == null) {
+                return@withLock ApplyResult(false, 0, "Wallpaper is still loading")
+            }
+            val now = clock()
+            val interval = AutoChangePolicy.clampIntervalMinutes(state.autoChange.intervalMinutes)
+            if (!force && AutoChangePolicy.shouldSkip(
+                    lastRunEpochMillis = state.autoChange.lastRunEpochMillis,
+                    nowEpochMillis = now,
+                    minutes = interval
+                )
+            ) {
+                updateAutoChange(
+                    state.autoChange.copy(
+                        nextRunEpochMillis = AutoChangePolicy.nextRunFrom(
+                            maxOf(now, state.autoChange.lastRunEpochMillis),
+                            interval
+                        )
+                    )
+                )
+                return@withLock ApplyResult(true, 0, "Skipped duplicate rotation")
+            }
+
+            val rendered = runCatching {
+                prefetchJob?.cancel()
+                aheadQueue.pollFirst() ?: createNewRenderedSet()
+            }.getOrElse { error ->
+                AppLog.error("Auto-change generation failed", error)
+                val failed = state.autoChange.copy(
+                    lastError = error.localizedMessage ?: "Generation failed",
+                    nextRunEpochMillis = AutoChangePolicy.nextRunFrom(now, interval)
+                )
+                updateAutoChange(failed)
+                postStatus(
+                    UiMessage(
+                        "desktop_error_generate",
+                        listOf(error.localizedMessage ?: "Unknown error")
+                    )
+                )
+                return@withLock ApplyResult(false, 0, "Generation failed")
+            }
+
+            commitRenderedSet(rendered, pushHistory = true, persist = true)
+
+            val targetIds = state.display.targets(state.monitors).map { it.id }.toSet()
+            val targetItems = rendered.set.items
+                .filter { it.monitorId in targetIds }
+                .ifEmpty { rendered.set.items }
+
+            val result = runCatching {
+                val files = withContext(Dispatchers.Default) {
+                    fileStore.renderSet(rendered.set.copy(items = targetItems))
+                }
+                val applyResult = backend.apply(files, state.display.fitMode)
+                if (applyResult.success) {
+                    val measured = files.associate { it.item.monitorId to it.measuredBlackPercent }
+                    val updatedItems = rendered.set.items.map { item ->
+                        measured[item.monitorId]?.let { item.copy(measuredBlackPercent = it) } ?: item
+                    }
+                    val updatedRenderedItems = rendered.items.map { item ->
+                        measured[item.item.monitorId]?.let {
+                            item.copy(
+                                item = item.item.copy(measuredBlackPercent = it),
+                                measuredBlackPercent = it
+                            )
+                        } ?: item
+                    }
+                    val updatedSet = rendered.set.copy(items = updatedItems)
+                    _uiState.update {
+                        it.copy(
+                            current = RenderedSet(updatedSet, updatedRenderedItems),
+                            isApplying = false
+                        )
+                    }
+                    val auto = state.autoChange.copy(
+                        lastRunEpochMillis = now,
+                        nextRunEpochMillis = if (state.autoChange.enabled) {
+                            AutoChangePolicy.nextRunFrom(now, interval)
+                        } else {
+                            0L
+                        },
+                        lastError = null
+                    )
+                    _uiState.update { it.copy(autoChange = auto) }
+                    store.update { it.copy(currentSet = updatedSet, autoChange = auto) }
+                    fileStore.cleanup(
+                        keepSetIds = (
+                            listOf(updatedSet.id) + past.take(3).map { set -> set.id }
+                            ).toSet()
+                    )
+                    val average = files.map { it.measuredBlackPercent }.average().roundToInt()
+                    postStatus(
+                        UiMessage(
+                            "msg_wallpaper_applied",
+                            listOf("${files.size} display(s)", average)
+                        )
+                    )
+                    applyResult
+                } else {
+                    val auto = state.autoChange.copy(
+                        lastRunEpochMillis = now,
+                        nextRunEpochMillis = AutoChangePolicy.nextRunFrom(now, interval),
+                        lastError = (listOf(applyResult.message) + applyResult.errors)
+                            .joinToString(" — ")
+                    )
+                    _uiState.update { it.copy(autoChange = auto) }
+                    store.update { it.copy(autoChange = auto) }
+                    postStatus(
+                        UiMessage(
+                            "desktop_error_apply",
+                            listOf(auto.lastError ?: applyResult.message)
+                        )
+                    )
+                    applyResult
+                }
+            }.getOrElse { error ->
+                AppLog.error("Auto-change apply failed", error)
+                val auto = state.autoChange.copy(
+                    lastRunEpochMillis = now,
+                    nextRunEpochMillis = AutoChangePolicy.nextRunFrom(now, interval),
+                    lastError = error.localizedMessage ?: "Apply failed"
+                )
+                updateAutoChange(auto)
+                postStatus(
+                    UiMessage(
+                        "desktop_error_apply",
+                        listOf(error.localizedMessage ?: "Unknown error")
+                    )
+                )
+                ApplyResult(false, 0, "Apply failed")
+            }
+
+            result
+        }
+    }
+
+    private fun updateAutoChange(settings: com.cptodix.rimalux.desktop.model.AutoChangeSettings) {
+        _uiState.update { it.copy(autoChange = settings) }
+        scope.launch {
+            store.update { it.copy(autoChange = settings) }
+        }
+    }
+
+    private fun startAutoChangeLoop() {
+        autoChangeJob = scope.launch {
+            while (isActive) {
+                delay(15_000L)
+                val state = _uiState.value
+                if (!state.autoChange.enabled || state.current == null) continue
+                val now = clock()
+                val next = state.autoChange.nextRunEpochMillis
+                if (next == 0L) {
+                    updateAutoChange(
+                        state.autoChange.copy(
+                            nextRunEpochMillis = AutoChangePolicy.nextRunFrom(
+                                now,
+                                state.autoChange.intervalMinutes
+                            )
+                        )
+                    )
+                } else if (now >= next) {
+                    performAutoRotation(force = false)
+                }
+            }
+        }
+    }
+
+    private suspend fun ensureAutoSchedule() {
+        val state = _uiState.value
+        if (!state.autoChange.enabled || state.current == null) return
+        val now = clock()
+        val interval = AutoChangePolicy.clampIntervalMinutes(state.autoChange.intervalMinutes)
+        val next = state.autoChange.nextRunEpochMillis
+        when {
+            next == 0L -> updateAutoChange(
+                state.autoChange.copy(
+                    nextRunEpochMillis = AutoChangePolicy.nextRunFrom(now, interval)
+                )
+            )
+
+            next <= now && state.autoChange.lastRunEpochMillis > 0L &&
+                now - state.autoChange.lastRunEpochMillis >= AutoChangePolicy.intervalMillis(interval) -> {
+                performAutoRotation(force = false)
+            }
+
+            next <= now -> updateAutoChange(
+                state.autoChange.copy(
+                    nextRunEpochMillis = AutoChangePolicy.nextRunFrom(now, interval)
+                )
+            )
         }
     }
 
@@ -986,7 +1282,25 @@ class StudioController(
                                 isApplying = false
                             )
                         }
-                        store.update { it.copy(currentSet = updatedSet) }
+                        val auto = if (state.autoChange.enabled) {
+                            state.autoChange.copy(
+                                lastRunEpochMillis = clock(),
+                                nextRunEpochMillis = AutoChangePolicy.nextRunFrom(
+                                    clock(),
+                                    state.autoChange.intervalMinutes
+                                ),
+                                lastError = null
+                            )
+                        } else {
+                            state.autoChange
+                        }
+                        _uiState.update { it.copy(autoChange = auto) }
+                        store.update {
+                            it.copy(
+                                currentSet = updatedSet,
+                                autoChange = auto
+                            )
+                        }
                         fileStore.cleanup(
                             keepSetIds = (
                                 listOf(updatedSet.id) +
@@ -1083,6 +1397,7 @@ class StudioController(
     fun shutdown() {
         synthesisJob?.cancel()
         prefetchJob?.cancel()
+        autoChangeJob?.cancel()
         scope.coroutineContext[Job]?.cancel()
     }
 

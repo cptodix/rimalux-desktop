@@ -19,7 +19,7 @@ requirements that keep the desktop port aligned with the Android app.
 - **Repository:** `cptodix/rimalux-desktop`
 - **Origin:** Android app `cptodix/rimalux`
 - **License:** GPL-3.0
-- **Current phase:** Phase 2 in progress (tray + auto-change)
+- **Current phase:** Phase 2 implemented (auto-change + tray), verification pending
 - **Completed:** Phase 0 + Phase 1 (desktop MVP, locked full-bleed UI, accepted by the user)
 - **Target platforms:** Linux (KDE Plasma verified, GNOME/XFCE supported) and Windows (Phase 3)
 

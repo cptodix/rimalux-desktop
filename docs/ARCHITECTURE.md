@@ -85,7 +85,10 @@ WallpaperSet metadata + history + settings JSON
 - `GnomeWallpaperBackend` — `gsettings` global apply.
 - `CustomCommandBackend` — `{file}`/`{monitor}` template.
 - `WallpaperFileStore` — renders cache PNGs and saves lossless PNGs to Pictures.
+- `AutostartManager` — XDG autostart (Linux) and HKCU Run (Windows).
+- `SingleInstanceManager` — file lock + localhost socket activation.
 - `ProcessRunner` — safe command execution with timeout and logs.
+- `scheduler/AutoChangePolicy` — pure interval/dedupe/next-run rules.
 
 ### `desktopApp.data`
 - `SettingsStore` — `StateFlow<DesktopSettings>`, JSON load/save, atomic writes.
@@ -93,9 +96,10 @@ WallpaperSet metadata + history + settings JSON
 
 ### `desktopApp.controller`
 - `StudioController` — UI state, synthesis jobs, monitor refresh, apply/export, prefetched
-  next-wallpaper buffer (target 3), and previous rendered-set cache.
+  next-wallpaper buffer (target 3), previous rendered-set cache, auto-change scheduler loop,
+  and manual/auto rotation.
 - `StudioUiState` — current rendered set, selected monitor, config, palettes, history,
-  buffer count, status, backend info.
+  buffer count, auto-change state, status, backend info.
 
 ### `desktopApp.ui`
 - `RimaluxDesktopApp` — full-window shell, options state, status snackbar.
@@ -115,6 +119,10 @@ WallpaperSet metadata + history + settings JSON
 - Slider changes are debounced (~150 ms) before regeneration.
 - A background prefetch job fills up to 3 upcoming rendered sets. Interactive generation cancels
   and clears the buffer; consuming a buffered set refills it without blocking the UI.
+- The auto-change loop ticks every 15 seconds, checks the persisted next-run timestamp, and
+  serializes rotations with an auto-rotation mutex. Manual apply resets the schedule.
+- Tray/single-instance/autostart code lives in the desktop application layer; the engine remains
+  untouched.
 - Apply/export are cancellable but never run concurrently with a rotation.
 
 ## Rendering contract

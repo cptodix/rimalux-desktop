@@ -35,16 +35,20 @@
 - [ ] Final visual polish pass
 - [ ] Verify per-monitor apply on a multi-monitor setup
 
-## Phase 2 — Auto-change 🚧 (in progress)
+## Phase 2 — Auto-change ✅ (implemented, verification pending)
 
-- [ ] Scheduler with persisted next/last run
-- [ ] Dedupe + catch-up after sleep/restart
-- [ ] Tray icon and menu
-- [ ] Start at Login (XDG autostart)
-- [ ] Single instance
-- [ ] Auto-Change screen
-- [ ] Failure retry + notifications
-- [ ] Scheduler tests
+- [x] Scheduler with persisted next/last run
+- [x] Dedupe + catch-up after sleep/restart
+- [x] Tray icon and menu
+- [x] Start at Login (XDG autostart + Windows Run key)
+- [x] Single instance
+- [x] Auto-Change section in the options modal
+- [x] Target display selection, interval picker, Change Now
+- [x] Failure logging + last error in UI
+- [x] `--background` and `--rotate-now` CLI modes
+- [x] Scheduler/policy/autostart/single-instance/auto-rotation tests
+- [ ] User-guided tray + real auto-change verification
+- [ ] Desktop notifications (optional follow-up)
 
 ## Phase 3 — Windows
 

@@ -93,16 +93,20 @@ This is the working checklist for AI agents and contributors. Keep statuses curr
 - [ ] Multi-monitor hardware test (machine has one display).
 - [ ] Windows backend test (Phase 3).
 
-## Phase 2 — Auto-change 🚧
+## Phase 2 — Auto-change ✅
 
-- [ ] `AutoChangeScheduler` (in progress)
-- [ ] Tray + menu
-- [ ] Start at Login (Linux)
-- [ ] Single instance
-- [ ] Auto-Change screen
-- [ ] Notifications/logs
-- [ ] Scheduler tests
-- [ ] Manual 1-minute rotation test
+- [x] `AutoChangePolicy` + controller scheduler loop
+- [x] Persisted next/last run, dedupe, catch-up
+- [x] Tray + menu
+- [x] Start at Login (Linux + Windows)
+- [x] Single instance
+- [x] Auto-Change section in the options modal
+- [x] Target displays, interval picker, Change Now
+- [x] `--background` / `--rotate-now`
+- [x] Logs + last error
+- [x] Scheduler/policy/autostart/single-instance/auto-rotation tests
+- [ ] Manual tray + 1-minute rotation test
+- [ ] Desktop notifications (optional follow-up)
 
 ## Phase 3 — Windows
 

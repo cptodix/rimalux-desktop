@@ -46,12 +46,24 @@ class PlatformPaths(
     val configFile: Path = configDir.resolve("settings.json")
     val cacheWallpapersDir: Path = cacheDir.resolve("wallpapers")
     val cachePreviewsDir: Path = cacheDir.resolve("previews")
+    val autostartDir: Path = configDir.parent.resolve("autostart")
+    val autostartFile: Path = autostartDir.resolve("rimalux.desktop")
+    val instanceLockFile: Path = configDir.resolve("instance.lock")
+    val instancePortFile: Path = configDir.resolve("instance.port")
 
     val logFile: Path = logsDir.resolve("rimalux.log")
 
     fun ensureDirectories() {
-        listOf(configDir, cacheDir, stateDir, logsDir, picturesDir, cacheWallpapersDir, cachePreviewsDir)
-            .forEach { dir -> runCatching { Files.createDirectories(dir) } }
+        listOf(
+            configDir,
+            cacheDir,
+            stateDir,
+            logsDir,
+            picturesDir,
+            cacheWallpapersDir,
+            cachePreviewsDir,
+            autostartDir
+        ).forEach { dir -> runCatching { Files.createDirectories(dir) } }
     }
 
     fun displayPath(path: Path): String = path.toAbsolutePath().normalize().toString()

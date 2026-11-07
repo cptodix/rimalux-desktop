@@ -528,7 +528,7 @@ private fun OptionsLeftPane(
             }
         }
 
-        AutoChangePhase2Card()
+        AutoChangeSection(state = state, controller = controller)
 
         OptionsRow(
             title = localizedStringOr("desktop_desktop_settings", "Desktop Settings"),
@@ -664,102 +664,6 @@ private fun OptionsRow(
                 modifier = Modifier.size(20.dp)
             )
         }
-    }
-}
-
-@Composable
-private fun AutoChangePhase2Card() {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            border = BorderStroke(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
-            )
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = localizedStringOr(
-                                "auto_master_toggle",
-                                "Auto-Change Wallpaper"
-                            ),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = localizedStringOr(
-                                "auto_off_desc",
-                                "Automatically updates your wallpaper at set intervals"
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(
-                        checked = false,
-                        onCheckedChange = {},
-                        enabled = false
-                    )
-                }
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
-                )
-                DisabledAutoRow(
-                    title = localizedStringOr("label_auto_target", "Apply To"),
-                    summary = localizedStringOr("desktop_all_displays", "All Displays")
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
-                )
-                DisabledAutoRow(
-                    title = localizedStringOr("label_interval", "Interval"),
-                    summary = "60m"
-                )
-            }
-        }
-        Text(
-            text = localizedStringOr("desktop_auto_change_phase2", "Auto-Change arrives in Phase 2."),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-    }
-}
-
-@Composable
-private fun DisabledAutoRow(title: String, summary: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
-            )
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-            )
-        }
-        Icon(
-            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-            modifier = Modifier.size(20.dp)
-        )
     }
 }
 

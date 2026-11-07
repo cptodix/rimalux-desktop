@@ -8,9 +8,9 @@ True Black Ratio, 80 procedural patterns, 41 curated palettes, gradient/solid co
 normal and center-weighted layouts, per-monitor wallpapers, lossless PNG export, and
 background auto-change.
 
-> **Status:** Phase 0 + Phase 1 complete. The locked full-bleed UI mirrors the Android app’s
-> structure while adapting it to desktop and has been accepted by the user. Phase 2
-> (auto-change, tray, Start at Login, single instance) is in progress. The Windows backend is
+> **Status:** Phase 0 + Phase 1 complete and accepted. Phase 2 (auto-change scheduler, tray,
+> Start at Login, single instance, `--background`/`--rotate-now`) is implemented and passes
+> automated tests; user-guided tray/auto-change verification is pending. The Windows backend is
 > Phase 3 — see [`docs/ROADMAP.md`](docs/ROADMAP.md) and
 > [`docs/VERIFICATION.md`](docs/VERIFICATION.md).
 
@@ -23,6 +23,10 @@ background auto-change.
   options modal modeled on the Android settings sheet.
 - Crisp 1920 px long-edge previews and a prefetched next-wallpaper buffer (target 3 sets).
 - Android-parity Patterns and Colors panes with multi-column desktop layouts.
+- Auto-change scheduler with persisted next/last run, interval, target displays, dedupe, and
+  catch-up after sleep/restart.
+- Tray menu, Start at Login, Keep in Tray, single-instance activation, and `--background` /
+  `--rotate-now` CLI modes.
 - Live Skia-rendered previews with exact true-black measurement.
 - 80 patterns, 41 palettes, custom palettes, true-black slider/range.
 - Solid and gradient color fills.

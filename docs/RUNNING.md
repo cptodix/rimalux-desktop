@@ -68,7 +68,16 @@ Cache:
 ~/.cache/rimalux/
 ```
 
-## CLI diagnostics
+## Auto-change, tray, and CLI
+
+- Open **Options → Auto-Change** to enable rotation, choose displays, interval, Start at Login,
+  and Keep in Tray.
+- The tray menu provides Show, Change Now, Auto-Change, Start at Login, and Quit.
+- Closing the window hides to tray when Auto-Change or Keep in Tray is enabled.
+- Start at Login writes `~/.config/autostart/rimalux.desktop` in an installed Linux build, or the
+  HKCU Run value on Windows.
+
+CLI diagnostics and automation:
 
 ```bash
 # List monitors and detected backend
@@ -79,7 +88,16 @@ Cache:
 
 # Headless render test (writes PNGs)
 ./gradlew :desktopApp:run --args="--render-test /tmp/rimalux-render-test"
+
+# Start hidden to tray
+./gradlew :desktopApp:run --args="--background"
+
+# Perform one rotation (changes the live wallpaper)
+./gradlew :desktopApp:run --args="--rotate-now"
 ```
+
+`--rotate-now` is intended for OS schedulers and manual testing; it changes the live desktop
+wallpaper. Ask before running it on a shared machine.
 
 ## Run from an installed package
 

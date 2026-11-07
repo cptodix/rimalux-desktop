@@ -1,5 +1,6 @@
 package com.cptodix.rimalux.desktop
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -9,9 +10,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -27,11 +30,13 @@ import com.cptodix.rimalux.desktop.platform.AppLog
 import com.cptodix.rimalux.desktop.platform.DefaultMonitorProvider
 import com.cptodix.rimalux.desktop.platform.PlatformPaths
 import com.cptodix.rimalux.desktop.platform.ProcessRunner
+import com.cptodix.rimalux.desktop.platform.SingleInstanceManager
 import com.cptodix.rimalux.desktop.platform.WallpaperBackendFactory
 import com.cptodix.rimalux.desktop.render.SkiaWallpaperRenderer
 import com.cptodix.rimalux.desktop.resources.Res
 import com.cptodix.rimalux.desktop.resources.rimalux_icon
 import com.cptodix.rimalux.desktop.ui.RimaluxDesktopApp
+import com.cptodix.rimalux.desktop.ui.localizedStringOr
 import com.cptodix.rimalux.desktop.ui.options.OptionsPage
 import com.cptodix.rimalux.desktop.ui.theme.RimaluxTheme
 import com.cptodix.rimalux.oled.wallpaper.engine.ArtPattern
@@ -43,6 +48,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Locale
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.compose.resources.painterResource
 
 fun main(args: Array<String>) {
@@ -75,6 +83,34 @@ fun main(args: Array<String>) {
             runRenderTest(Paths.get(output))
             return
         }
+
+        args.contains("--rotate-now") -> {
+            val controller = StudioController(paths = paths, store = store)
+            val result = runBlocking {
+                withTimeout(60_000L) {
+                    controller.uiState.first { it.current != null }
+                }
+                controller.performAutoRotation(force = true)
+            }
+            if (result == null) {
+                println("Rimalux: no rotation result")
+            } else {
+                println(
+                    "Rimalux rotation: success=${result.success} " +
+                        "applied=${result.appliedCount} message=${result.message}"
+                )
+                result.errors.forEach { println("  $it") }
+            }
+            controller.shutdown()
+            return
+        }
+    }
+
+    val startBackground = args.contains("--background")
+    val singleInstance = SingleInstanceManager(paths)
+    if (!singleInstance.acquire()) {
+        singleInstance.notifyExisting()
+        return
     }
 
     val controller = StudioController(paths = paths, store = store)
@@ -82,6 +118,8 @@ fun main(args: Array<String>) {
         val state by controller.uiState.collectAsState()
         var optionsOpen by remember { mutableStateOf(false) }
         var optionsPage by remember { mutableStateOf(OptionsPage.NONE) }
+        val trayState = rememberTrayState()
+        var windowVisible by remember { mutableStateOf(true) }
         val windowState = rememberWindowState(
             position = WindowPosition(Alignment.Center),
             size = DpSize(
@@ -90,12 +128,30 @@ fun main(args: Array<String>) {
             )
         )
 
+        LaunchedEffect(Unit) {
+            singleInstance.showSignal.collect {
+                windowVisible = true
+            }
+        }
+        LaunchedEffect(Unit) {
+            if (startBackground && java.awt.SystemTray.isSupported()) {
+                windowVisible = false
+            }
+        }
+
         Window(
             onCloseRequest = {
-                controller.shutdown()
-                exitApplication()
+                val keepRunning = state.autoChange.enabled || state.autoChange.keepInTray
+                if (keepRunning && java.awt.SystemTray.isSupported()) {
+                    windowVisible = false
+                } else {
+                    controller.shutdown()
+                    singleInstance.close()
+                    exitApplication()
+                }
             },
             state = windowState,
+            visible = windowVisible,
             title = "Rimalux",
             icon = painterResource(Res.drawable.rimalux_icon),
             onKeyEvent = { event ->
@@ -154,6 +210,45 @@ fun main(args: Array<String>) {
                     )
                 }
             }
+        }
+
+        if (java.awt.SystemTray.isSupported()) {
+            Tray(
+                icon = painterResource(Res.drawable.rimalux_icon),
+                state = trayState,
+                tooltip = "Rimalux",
+                onAction = { windowVisible = true },
+                menu = {
+                    Item(
+                        localizedStringOr("desktop_app_title", "Rimalux"),
+                        onClick = { windowVisible = true }
+                    )
+                    Item(
+                        localizedStringOr("desktop_auto_change_now", "Change Now"),
+                        onClick = controller::changeWallpaperNow
+                    )
+                    Separator()
+                    CheckboxItem(
+                        localizedStringOr("auto_master_toggle", "Auto-Change Wallpaper"),
+                        checked = state.autoChange.enabled,
+                        onCheckedChange = controller::setAutoChangeEnabled
+                    )
+                    CheckboxItem(
+                        localizedStringOr("desktop_auto_start_login", "Start at Login"),
+                        checked = state.autoChange.runAtLogin,
+                        onCheckedChange = controller::setRunAtLogin
+                    )
+                    Separator()
+                    Item(
+                        localizedStringOr("desktop_quit", "Quit"),
+                        onClick = {
+                            controller.shutdown()
+                            singleInstance.close()
+                            exitApplication()
+                        }
+                    )
+                }
+            )
         }
     }
 }

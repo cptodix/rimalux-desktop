@@ -75,8 +75,10 @@ The modal is a floating dark panel anchored bottom-left. Its left column contain
    - Colors row with palette summary and chevron.
    - Color Fill Style row with current mode and chevron (quick popup).
 2. **Auto-Change card**
-   - Same visual structure as Android: master switch, Apply To row, Interval row.
-   - Phase 1 shows it disabled with a “Phase 2” note.
+   - Master switch, Apply To row, Interval row, Start at Login, Keep in Tray.
+   - Shows next/last change, Change Now, and the last error if any.
+   - Apply To selects all displays or specific monitors.
+   - Interval uses presets plus a custom minutes field.
 3. **Desktop Settings** row.
 4. **Enjoying Rimalux?** support card.
 5. **About footer** with version/credit.
@@ -165,6 +167,15 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 | `Ctrl/Cmd + Enter` | Apply wallpaper |
 | `Ctrl/Cmd + ,` | Open Desktop Settings |
 | `Esc` | Close options modal |
+
+## Tray and background
+
+- The tray menu shows Rimalux, Change Wallpaper Now, Auto-Change, Start at Login, and Quit.
+- Closing the window hides to tray when Auto-Change or Keep in Tray is enabled.
+- `--background` starts hidden to tray.
+- `--rotate-now` performs one headless rotation for OS schedulers/tests.
+- Start at Login writes an XDG autostart entry on Linux and an HKCU Run value on Windows.
+- A second launch focuses the running instance instead of starting another scheduler.
 
 ## Accessibility
 

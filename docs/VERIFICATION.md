@@ -30,6 +30,10 @@
 | `WallpaperFileStoreTest` | Pass |
 | `WallpaperBackendTest` | Pass |
 | `StudioControllerPrefetchTest` | Pass — next-wallpaper buffer fills headlessly |
+| `AutoChangePolicyTest` | Pass — intervals, dedupe, due/next-run rules |
+| `AutostartManagerTest` | Pass — Linux XDG autostart entry |
+| `SingleInstanceManagerTest` | Pass — second instance notifies first |
+| `StudioControllerAutoChangeTest` | Pass — fake clock/backend rotation |
 | `./gradlew test` | BUILD SUCCESSFUL |
 
 The headless render proof produced 1920×1080 PNGs with measured true black at 85–86% for a
@@ -47,7 +51,8 @@ The headless render proof produced 1920×1080 PNGs with measured true black at 8
 | KDE apply wallpaper | Pass — in-app status: “Applied to 1 display(s) · 90% true black” |
 | Per-monitor apply on multi-monitor hardware | Not tested — verification machine has one display |
 | Windows MSI/EXE | Not tested — Phase 3 |
-| Auto-change / tray / start at login | Not implemented — Phase 2 |
+| Auto-change / tray / start at login | Implemented; user-guided runtime verification pending |
+| Auto-change scheduler tests | Pass — policy, autostart, single instance, fake rotation |
 | RPM packaging | Pass — `rimalux-0.1.0-1.x86_64.rpm` built with Temurin 21 |
 | Packaged RPM launch | Pass — extracted `/opt/rimalux/bin/Rimalux` launched and appeared in the window list |
 | DEB packaging | Not tested — `dpkg-deb` is not installed on this openSUSE machine |

@@ -45,11 +45,18 @@ Run all:
   - Boots the controller against a temporary config/cache directory, waits for the initial set,
     and verifies the next-wallpaper buffer fills (1–3 sets) without a GUI.
 
-- **`AutostartTest`** (Phase 2, planned)
-  - `.desktop` content and Windows registry value formatting.
+- **`AutoChangePolicyTest`**
+  - Interval clamping, dedupe windows, due detection, next-run calculations.
 
-- **`AutoChangeSchedulerTest`** (Phase 2, planned)
-  - Fake clock + fake backend; schedule, dedupe, catch-up, interval change, failure.
+- **`AutostartManagerTest`**
+  - Linux XDG autostart entry creation/removal and content.
+
+- **`SingleInstanceManagerTest`**
+  - First instance acquires the lock; second instance fails and notifies the first.
+
+- **`StudioControllerAutoChangeTest`**
+  - Fake clock + fake backend; due rotation generates and applies a new set and advances
+    last/next run timestamps.
 
 ## Manual Linux checklist
 
@@ -75,6 +82,19 @@ still needs user-guided visual verification per `RULES.md`.
 17. [x] High-resolution 1920 px preview.
 18. [ ] Multi-monitor apply on real hardware (not available).
 19. [ ] Windows backend (Phase 3).
+
+### Phase 2 manual checklist (pending)
+
+1. [ ] Enable Auto-Change; verify next-run appears.
+2. [ ] Change interval; verify next-run updates.
+3. [ ] Set Apply To to specific displays; verify only those change.
+4. [ ] Start at Login creates `~/.config/autostart/rimalux.desktop` (installed build).
+5. [ ] Close window with Auto-Change on; verify it hides to tray and keeps running.
+6. [ ] Tray menu Show / Change Now / Auto-Change / Quit work.
+7. [ ] Run `--rotate-now`; verify one wallpaper change.
+8. [ ] Launch a second instance; verify it focuses the first.
+9. [ ] Wait for one interval; verify automatic change.
+10. [ ] Sleep/restart catch-up behavior.
 
 ## Manual GNOME checklist
 
