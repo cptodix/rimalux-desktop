@@ -29,24 +29,21 @@
 | `SettingsStoreTest` | Pass |
 | `WallpaperFileStoreTest` | Pass |
 | `WallpaperBackendTest` | Pass |
+| `StudioControllerPrefetchTest` | Pass — next-wallpaper buffer fills headlessly |
 | `./gradlew test` | BUILD SUCCESSFUL |
 
 The headless render proof produced 1920×1080 PNGs with measured true black at 85–86% for a
 90% target on the sampled patterns. The full calibration test passed for all 80 patterns in both
 `NORMAL` and `CENTER_WEIGHTED` modes.
 
-### Manual results
+### Manual results — Phase 0/1 baseline
 
 | Check | Result |
 |---|---|
-| App window launches on KDE Wayland | Pass |
-| Studio screen renders preview | Pass |
-| Patterns gallery shows 80 localized cards | Pass |
-| Colors gallery shows 41 palettes + swatches | Pass |
-| Settings screen shows backend, folders, about | Pass |
+| App window launches on KDE Wayland (pre-lock layout) | Pass |
+| Studio/Patterns/Colors/Settings baseline screens | Pass |
 | Language switch EN ↔ ID | Pass (persisted in `settings.json`) |
 | Settings survive restart | Pass |
-| Narrow-window layout (920×748) | Pass — no nested-scroll error after the fix |
 | KDE apply wallpaper | Pass — in-app status: “Applied to 1 display(s) · 90% true black” |
 | Per-monitor apply on multi-monitor hardware | Not tested — verification machine has one display |
 | Windows MSI/EXE | Not tested — Phase 3 |
@@ -55,12 +52,11 @@ The headless render proof produced 1920×1080 PNGs with measured true black at 8
 | Packaged RPM launch | Pass — extracted `/opt/rimalux/bin/Rimalux` launched and appeared in the window list |
 | DEB packaging | Not tested — `dpkg-deb` is not installed on this openSUSE machine |
 
-### Screenshots
+### Locked UI redesign
 
-- `docs/screenshots/studio.png`
-- `docs/screenshots/patterns.png`
-- `docs/screenshots/colors.png`
-- `docs/screenshots/settings.png`
+The full-bleed wallpaper + media-player controls + expanding options modal is implemented.
+User-guided visual verification was accepted on 2026-11-07. The UI now mirrors the Android
+app’s structure while adapting it to desktop. No new screenshots were taken, per `RULES.md`.
 
 ### Notes
 

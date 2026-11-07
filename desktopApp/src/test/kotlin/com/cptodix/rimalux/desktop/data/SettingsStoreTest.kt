@@ -30,7 +30,9 @@ class SettingsStoreTest {
                     pitchBlackRatio = 0.72f,
                     patternsRandomized = false
                 ),
-                ui = settings.ui.copy(languageTag = "id-ID", lastScreen = com.cptodix.rimalux.desktop.model.DesktopScreen.COLORS)
+                ui = settings.ui.copy(languageTag = "id-ID", lastScreen = com.cptodix.rimalux.desktop.model.DesktopScreen.COLORS),
+                userPalettes = settings.userPalettes.filterNot { it.id == "obsidian_aurora" },
+                deletedPaletteIds = setOf("obsidian_aurora")
             )
         }
 
@@ -40,6 +42,8 @@ class SettingsStoreTest {
         assertEquals(false, state.generation.patternsRandomized)
         assertEquals("id-ID", state.ui.languageTag)
         assertEquals(com.cptodix.rimalux.desktop.model.DesktopScreen.COLORS, state.ui.lastScreen)
+        assertEquals(setOf("obsidian_aurora"), state.deletedPaletteIds)
+        assertTrue(state.userPalettes.none { it.id == "obsidian_aurora" })
         assertTrue(Files.exists(paths.configFile))
     }
 

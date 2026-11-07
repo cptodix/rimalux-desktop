@@ -54,6 +54,7 @@ data class StudioUiState(
     val languageTag: String = "en-US",
     val canGoBack: Boolean = false,
     val canGoForward: Boolean = false,
+    val aheadReadyCount: Int = 0,
     val previewError: String? = null
 ) {
     val selectedMonitor: MonitorInfo?

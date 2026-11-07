@@ -4,7 +4,8 @@ Start here:
 
 1. [`../README.md`](../README.md) — product overview and quick start
 2. [`../AGENTS.md`](../AGENTS.md) — rules for agents/contributors
-3. [`CONTEXT.md`](CONTEXT.md) — goals, decisions, environment
+3. [`../RULES.md`](../RULES.md) — mandatory testing and visual verification rules
+4. [`CONTEXT.md`](CONTEXT.md) — goals, decisions, environment
 4. [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) — current checklist
 5. [`ROADMAP.md`](ROADMAP.md) — phase status
 

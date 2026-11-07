@@ -44,8 +44,9 @@ This repository ports the product to **Linux and Windows** as a desktop-native a
 
 ## Current status (2026-11-07)
 
-Phase 0 + Phase 1 are implemented and verified on KDE Plasma Wayland. See
-[`VERIFICATION.md`](VERIFICATION.md). Auto-change/tray is Phase 2; Windows is Phase 3.
+Phase 0 + Phase 1 are complete. The full-bleed desktop UI mirrors the Android app’s structure
+and was accepted by the user. Phase 2 (auto-change, tray, Start at Login, single instance) is in
+progress; Windows is Phase 3. See [`VERIFICATION.md`](VERIFICATION.md).
 
 ## Scope of Phase 0 + Phase 1
 

@@ -1,14 +1,14 @@
 package com.cptodix.rimalux.desktop
 
-import com.cptodix.rimalux.desktop.ui.localizedStringOr
-
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
@@ -20,11 +20,9 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import com.cptodix.rimalux.desktop.controller.StudioController
-import com.cptodix.rimalux.desktop.controller.StudioUiState
 import com.cptodix.rimalux.desktop.data.SettingsStore
 import com.cptodix.rimalux.desktop.model.AppLanguage
 import com.cptodix.rimalux.desktop.model.ApplyTarget
-import com.cptodix.rimalux.desktop.model.DesktopScreen
 import com.cptodix.rimalux.desktop.platform.AppLog
 import com.cptodix.rimalux.desktop.platform.DefaultMonitorProvider
 import com.cptodix.rimalux.desktop.platform.PlatformPaths
@@ -34,7 +32,7 @@ import com.cptodix.rimalux.desktop.render.SkiaWallpaperRenderer
 import com.cptodix.rimalux.desktop.resources.Res
 import com.cptodix.rimalux.desktop.resources.rimalux_icon
 import com.cptodix.rimalux.desktop.ui.RimaluxDesktopApp
-import com.cptodix.rimalux.desktop.ui.localizedString
+import com.cptodix.rimalux.desktop.ui.options.OptionsPage
 import com.cptodix.rimalux.desktop.ui.theme.RimaluxTheme
 import com.cptodix.rimalux.oled.wallpaper.engine.ArtPattern
 import com.cptodix.rimalux.oled.wallpaper.engine.ColorFillMode
@@ -82,6 +80,8 @@ fun main(args: Array<String>) {
     val controller = StudioController(paths = paths, store = store)
     application {
         val state by controller.uiState.collectAsState()
+        var optionsOpen by remember { mutableStateOf(false) }
+        var optionsPage by remember { mutableStateOf(OptionsPage.NONE) }
         val windowState = rememberWindowState(
             position = WindowPosition(Alignment.Center),
             size = DpSize(
@@ -104,8 +104,13 @@ fun main(args: Array<String>) {
                 } else {
                     val modifier = event.isCtrlPressed || event.isMetaPressed
                     when {
+                        event.key == Key.Escape && optionsOpen -> {
+                            optionsOpen = false
+                            optionsPage = OptionsPage.NONE
+                            true
+                        }
                         event.key == Key.Spacebar -> {
-                            controller.randomize()
+                            controller.next()
                             true
                         }
                         event.key == Key.DirectionLeft -> {
@@ -125,7 +130,8 @@ fun main(args: Array<String>) {
                             true
                         }
                         modifier && event.key == Key.Comma -> {
-                            controller.setScreen(DesktopScreen.SETTINGS)
+                            optionsOpen = true
+                            optionsPage = OptionsPage.SETTINGS
                             true
                         }
                         else -> false
@@ -133,49 +139,19 @@ fun main(args: Array<String>) {
                 }
             }
         ) {
-            MenuBar {
-                Menu(localizedStringOr("desktop_app_title", "Rimalux"), mnemonic = 'R') {
-                    Item(
-                        localizedStringOr("desktop_randomize", "Randomize"),
-                        onClick = controller::randomize
-                    )
-                    Item(
-                        localizedStringOr("desktop_save_png", "Save PNG"),
-                        onClick = { controller.savePngs(ApplyTarget.ALL_DISPLAYS) }
-                    )
-                    Item(
-                        localizedStringOr("desktop_apply_wallpaper", "Apply Wallpaper"),
-                        onClick = { controller.applyWallpaper(ApplyTarget.ALL_DISPLAYS) }
-                    )
-                    Separator()
-                    Item(localizedStringOr("desktop_quit", "Quit"), onClick = ::exitApplication)
-                }
-                Menu(localizedStringOr("desktop_nav_studio", "Studio"), mnemonic = 'V') {
-                    Item(
-                        localizedStringOr("desktop_nav_studio", "Studio"),
-                        onClick = { controller.setScreen(DesktopScreen.STUDIO) }
-                    )
-                    Item(
-                        localizedStringOr("desktop_nav_patterns", "Patterns"),
-                        onClick = { controller.setScreen(DesktopScreen.PATTERNS) }
-                    )
-                    Item(
-                        localizedStringOr("desktop_nav_colors", "Colors"),
-                        onClick = { controller.setScreen(DesktopScreen.COLORS) }
-                    )
-                    Item(
-                        localizedStringOr("desktop_nav_settings", "Settings"),
-                        onClick = { controller.setScreen(DesktopScreen.SETTINGS) }
-                    )
-                }
-            }
-
             key(state.languageTag) {
                 RimaluxTheme(
                     paletteColors = state.selectedRenderedItem?.item?.paletteColors
                         ?: state.current?.set?.items?.firstOrNull()?.paletteColors
                 ) {
-                    RimaluxDesktopApp(state = state, controller = controller)
+                    RimaluxDesktopApp(
+                        state = state,
+                        controller = controller,
+                        optionsOpen = optionsOpen,
+                        optionsPage = optionsPage,
+                        onOptionsOpenChange = { optionsOpen = it },
+                        onOptionsPageChange = { optionsPage = it }
+                    )
                 }
             }
         }

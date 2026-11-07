@@ -1,126 +1,175 @@
 # Desktop UX Specification
 
-## Window
+> **Locked and accepted.** The UI reflects the original Android app’s structure and visual
+> language, adapted to a desktop window: full-bleed wallpaper, media-player controls, and the
+> expanding options modal. Do not reintroduce a menu bar, side rail, or generic dashboard layout.
 
-- Default size: 1280 × 820 dp.
-- Minimum size: 1024 × 700 dp.
-- Native window decorations; OLED black content.
-- Left navigation rail: Studio, Patterns, Colors, Settings (Auto-Change added in Phase 2).
-- Top app bar per screen with title and primary actions.
-- Bottom status line for backend, resolution, and true-black feedback.
-- Snackbar for transient status messages.
+## Main window — locked layout
 
-## Studio screen
+The wallpaper is the centerpiece. There is no menu bar, no side navigation rail, and no
+persistent settings panel.
 
 ```text
-┌────────────┬─────────────────────────────────────────────────────────┐
-│ Nav rail   │ Top bar: Rimalux Studio   [Randomize] [Apply] [Save]    │
-│            ├──────────────────────────────┬──────────────────────────┤
-│ Studio     │                              │ Pattern card             │
-│ Patterns   │      Wallpaper preview       │ Colors card              │
-│ Colors     │      (selected display)      │ True Black Ratio         │
-│ Settings   │                              │ Pattern Layout           │
-│            │  [Display 1 ▾] [Preview All] │ Color Fill               │
-│            │                              │ Display Targets          │
-│            │  History strip               │ Actions                  │
-└────────────┴──────────────────────────────┴──────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│                                                                    │
+│                                                                    │
+│                     FULL-BLEED WALLPAPER PREVIEW                   │
+│                                                                    │
+│                                                                    │
+│                 ┌────────────────────────────────┐                 │
+│                 │ Pattern · ● ● ● ● · 90% Black  │  info pill      │
+│                 └────────────────────────────────┘                 │
+│  ┌────┐        ┌──────────────────────────────┐        ┌─────────┐ │
+│  │ ☰  │        │  ⏮   [apply]   💾   ⏭        │        │ eDP-1 ▾ │ │
+│  └────┘        └──────────────────────────────┘        └─────────┘ │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
-### Preview pane
-- Shows the selected monitor's wallpaper at its aspect ratio.
-- Pure black letterbox; subtle 1 dp outline and 12 dp rounded corners.
-- Overlay label: display name, resolution, measured true-black percentage.
-- Progress indicator while synthesizing.
-- When more than one display is detected, a horizontal strip of all monitor previews appears
-  below the main preview.
-- History strip below the preview: last sets, click to restore the whole set.
+### Bottom controls
 
-### Control panel
-- **Pattern card** — current pattern title/subtitle, seed, “Browse Patterns”.
-- **Colors card** — palette name/swatches, “Browse Colors”.
-- **True Black Ratio** — Single/Range segmented control, slider(s), percentage label.
-- **Pattern Layout** — Normal / Center Weighted segmented control.
-- **Color Fill** — Solid / Gradient segmented control.
-- **Display Targets** — per-display support status, “Match design across displays” switch,
-  and “Display Layout” button. Auto-change target checkboxes arrive in Phase 2.
-- **Actions** — Apply to All Displays, Apply to This Display, Save PNG, Save All Displays.
-- Disabled states must be visibly dimmed and non-interactive.
+- **Bottom left:** circular hamburger button → opens the options modal.
+- **Bottom center:** media-player control pill:
+  - Previous wallpaper (from history; disabled when history is empty).
+  - Apply wallpaper (primary circular button).
+  - Save PNG (lossless export).
+  - Next wallpaper (prefetched; instant when the buffer is ready).
+- **Bottom right:** display selector + display-layout button.
+- A subtle bottom gradient keeps controls readable without hiding the wallpaper.
 
-## Patterns screen
+### Info pill
 
-- Search field.
-- Category filter chips: Flow & Waves, Symmetry & Sacred, Architectural, Tessellations.
-- Randomize Patterns switch.
-- Select All / Select None.
-- Adaptive grid (`LazyVerticalGrid`, min 180 dp).
-- Cards show preview image, localized title, subtitle, and a check overlay when selected.
-- Click toggles selection; a preview icon applies that pattern to the current set.
-- When randomize is on, individual selection is disabled with a short note.
+Above the bottom controls, a small translucent pill shows:
 
-## Colors screen
+- Pattern name.
+- Current palette dots (first 4 colors).
+- Measured True Black percentage.
 
-- Fill mode: Solid / Gradient.
-- Palette mode: Random Harmony / My Palettes.
-- Shuffle Harmony button (random mode).
-- Create Palette button.
-- Adaptive palette grid; cards show name and 5 swatches; selected border + check.
-- Custom palettes can be deleted with confirmation.
-- Create Palette dialog: name, 2–6 color slots, add/remove, HSV + hex color picker.
-- Pure `#000000` is rejected as a palette color (OLED void is reserved).
+It must not block wallpaper viewing; it is compact and centered.
 
-## Settings screen
+### Preview quality
 
-- Language: English (US) / Bahasa Indonesia.
-- Wallpaper resolution: Auto / 1920×1080 / 2560×1440 / 3840×2160 / Custom.
-- Fit mode: Fill / Fit / Center (backend-dependent; Fill default).
-- Display layout and mapping.
-- Backend status: detected backend, per-monitor support, Test button (Phase 1: apply a test image).
-- Folders: config, cache, Pictures, logs; “Open” buttons.
-- About: version, engine commit, license, support link.
-- Phase status note for auto-change (Phase 2).
+- Previews are rendered at a **1920 px long edge** (aspect-preserving) instead of the old
+  960 px preview, so the full-window wallpaper is crisp on 1080p and 1440p displays.
+- Full-resolution apply/save still uses the target monitor resolution (capped at 4096 px).
 
-## Display Layout dialog
+### Prefetch buffer
 
-- Visual rectangles positioned by monitor bounds, scaled to fit.
-- Labels: Display 1, resolution, primary marker.
-- Click a rectangle to select it for preview.
-- Checkboxes for target displays.
-- “Match design across displays” switch.
-- “Refresh displays” button.
-- KDE: screen order follows the Plasma output order; a reorder/identify workflow is planned for
-  Phase 2/4.
-- GNOME: note that the DE applies one wallpaper to all displays.
+- The controller keeps up to **3** upcoming rendered sets (`aheadQueue`).
+- Pressing Next immediately promotes the first buffered set and starts refilling the buffer.
+- If the buffer is empty, Next generates on demand and shows progress.
+- Previous uses a small rendered-set cache when available, otherwise regenerates from history.
+- Config/palette/layout changes clear the buffer and refill it with the new settings.
 
-## Terminology and copy
+## Options modal
 
-- Title Case for screen titles, modal titles, section headers, buttons.
-- Sentence case for descriptions and status messages.
-- “Patterns”, “Colors”, “True Black Ratio”, “Apply to Desktop”.
-- Do not use “Styles”, “Pitch Black Ratio”, or Android Home/Lock targets in desktop copy.
+Opened by the bottom-left hamburger. Styled after the Android bottom sheet.
+
+### Collapsed state
+
+The modal is a floating dark panel anchored bottom-left. Its left column contains:
+
+1. **Joined control card**
+   - True Black Ratio: title, current percentage, Single/Range segmented control, slider/range.
+   - Patterns row with summary and chevron.
+   - Pattern Layout row with current mode and chevron (quick popup).
+   - Colors row with palette summary and chevron.
+   - Color Fill Style row with current mode and chevron (quick popup).
+2. **Auto-Change card**
+   - Same visual structure as Android: master switch, Apply To row, Interval row.
+   - Phase 1 shows it disabled with a “Phase 2” note.
+3. **Desktop Settings** row.
+4. **Enjoying Rimalux?** support card.
+5. **About footer** with version/credit.
+
+Language is not duplicated in the options modal; it lives in the Settings pane.
+
+The modal header has:
+
+- Back arrow when a right-hand page is open (collapses the page).
+- Close button.
+
+**Desktop Settings** is an options row above the “Enjoying Rimalux?” card. It opens the
+Settings pane in the expanded right column. The options modal itself does not duplicate the
+language selector; language lives in the Settings pane.
+
+### Expanded tablet state
+
+Selecting **Patterns** or **Colors** animates the modal wider to the right:
+
+```text
+┌───────────────────────────┬───────────────────────────────────────┐
+│  Options left sheet       │  Patterns / Colors / Settings page    │
+│  (Android sheet layout)   │  (same content as the desktop page)   │
+└───────────────────────────┴───────────────────────────────────────┘
+```
+
+- The left sheet stays visible and scrollable.
+- The right pane shows the existing Patterns, Colors, or Settings content.
+- Clicking the active row again collapses the right pane.
+- Clicking the scrim or Close dismisses the modal.
+- `Esc` dismisses the modal.
+
+### Quick popups
+
+- Pattern Layout: Normal / Center Weighted single-choice dialog.
+- Color Fill Style: Solid / Gradients single-choice dialog.
+- Styled like the Android `RimaluxModalDialog` rows: selected border, check icon, cancel.
+
+## Patterns pane (Android parity)
+
+- No search field.
+- Randomized vs Select Custom segmented control.
+- Category chips only in Select Custom mode: All, Flow & Waves, Symmetry & Sacred,
+  Architectural, Tessellations.
+- Multi-select hint with selected/total count.
+- Select All / Select None text buttons.
+- Adaptive multi-column grid of 80 preview cards.
+- Selected cards use a primary border and check badge.
+- The currently rendered pattern gets a subtle primary-tinted border.
+- In Randomized mode, cards have no selected state. Clicking a card switches to Select Custom
+  with only that pattern selected, matching Android behavior.
+
+## Colors pane (Android parity)
+
+- Palette Mode: Randomize All / Select Custom segmented control.
+- Add Palette button.
+- Select All / Select None and active/total hint in Select Custom mode.
+- Multi-column palette list cards with large solid swatches.
+- Selected cards use a primary border and check badge.
+- Remove action for any palette while more than one remains; deleted starter palettes stay
+  deleted via persisted `deletedPaletteIds`.
+- No color-fill selector or shuffle button here; Color Fill is a quick row in the options sheet.
+
+## Settings pane
+
+- Language.
+- Wallpaper resolution (Auto / 1920 / 2560 / 3840 / Custom).
+- Fit mode (Fill / Fit / Center / Tile).
+- Backend status, refresh, override chips, custom command, test.
+- Folder shortcuts.
+- About, version, engine commit, license, shortcuts, Phase 2 note.
+
+## Terminology
+
+- **Patterns**, **Colors**, **True Black Ratio**, **Apply to Desktop**.
+- Avoid Android Home/Lock target wording on desktop.
+- Do not promise Windows lock-screen wallpaper support.
 
 ## Keyboard shortcuts
 
 | Key | Action |
 |---|---|
-| `Space` | Randomize |
-| `←` / `→` | Previous / next history set |
+| `Space` / `→` | Next wallpaper (prefetched) |
+| `←` | Previous wallpaper |
 | `Ctrl/Cmd + S` | Save PNG |
 | `Ctrl/Cmd + Enter` | Apply wallpaper |
-| `Ctrl/Cmd + ,` | Settings |
-| `F11` | Fullscreen preview (Phase 4) |
-| `Esc` | Close dialog / exit fullscreen |
+| `Ctrl/Cmd + ,` | Open Desktop Settings |
+| `Esc` | Close options modal |
 
 ## Accessibility
 
 - All controls keyboard reachable with visible focus.
-- Content descriptions for icon-only buttons.
-- Minimum interactive size 40 dp on desktop, 48 dp where practical.
-- Do not rely on color alone for selection; use check icons and borders.
-- Respect system font scaling where possible.
-
-## Localization
-
-- Compose Resources select `values-id` when the JVM locale is Indonesian.
-- Language selector changes `Locale.setDefault` and wraps the UI in `key(languageTag)`.
-- Pattern titles/subtitles and palette names resolve from synced Android strings.
-- Desktop-only strings are maintained in both English and Indonesian.
+- Icon-only controls have content descriptions.
+- Minimum interactive size 40–48 dp.
+- Selection uses borders/check icons, not color alone.
+- Keep the info pill and bottom controls readable over any wallpaper via the bottom scrim.

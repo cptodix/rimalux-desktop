@@ -8,27 +8,21 @@ True Black Ratio, 80 procedural patterns, 41 curated palettes, gradient/solid co
 normal and center-weighted layouts, per-monitor wallpapers, lossless PNG export, and
 background auto-change.
 
-> **Status:** Phase 0 + Phase 1 implemented and verified on KDE Plasma Wayland.
-> The app is runnable on Linux. Auto-change, tray mode, and the Windows backend are scheduled for
-> the next phases — see [`docs/ROADMAP.md`](docs/ROADMAP.md) and
+> **Status:** Phase 0 + Phase 1 complete. The locked full-bleed UI mirrors the Android app’s
+> structure while adapting it to desktop and has been accepted by the user. Phase 2
+> (auto-change, tray, Start at Login, single instance) is in progress. The Windows backend is
+> Phase 3 — see [`docs/ROADMAP.md`](docs/ROADMAP.md) and
 > [`docs/VERIFICATION.md`](docs/VERIFICATION.md).
 
 ---
 
-## Screenshots
-
-| Studio | Patterns |
-|---|---|
-| ![Studio](docs/screenshots/studio.png) | ![Patterns](docs/screenshots/patterns.png) |
-
-| Colors | Settings |
-|---|---|
-| ![Colors](docs/screenshots/colors.png) | ![Settings](docs/screenshots/settings.png) |
-
 ## What is implemented today
 
 - Pure Kotlin wallpaper engine synced from the Android project.
-- Compose Desktop native UI (Studio, Patterns, Colors, Settings).
+- Full-bleed desktop studio with media-player controls, an info pill, and an expanding
+  options modal modeled on the Android settings sheet.
+- Crisp 1920 px long-edge previews and a prefetched next-wallpaper buffer (target 3 sets).
+- Android-parity Patterns and Colors panes with multi-column desktop layouts.
 - Live Skia-rendered previews with exact true-black measurement.
 - 80 patterns, 41 palettes, custom palettes, true-black slider/range.
 - Solid and gradient color fills.
@@ -38,6 +32,7 @@ background auto-change.
 - Lossless PNG export to `~/Pictures/Rimalux`.
 - English and Bahasa Indonesia localization.
 - JSON settings persistence and wallpaper-set history.
+- Options modal with Patterns/Colors/Settings expanding to the right like a tablet.
 
 ## What comes next
 
@@ -68,8 +63,9 @@ If you need to regenerate the shared engine/string/preview assets from the Andro
 ./gradlew syncAll
 ```
 
-Verified environment: openSUSE Tumbleweed, KDE Plasma 6.7.5 Wayland, JDK 17, 1920×1080 display.
-Detailed run instructions and troubleshooting: [`docs/RUNNING.md`](docs/RUNNING.md).
+Environment used for baseline verification: openSUSE Tumbleweed, KDE Plasma 6.7.5 Wayland,
+JDK 17, 1920×1080 display. Detailed run instructions and troubleshooting:
+[`docs/RUNNING.md`](docs/RUNNING.md).
 
 ## Build installers
 
@@ -105,6 +101,7 @@ rimalux-desktop/
 | Document | Purpose |
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | Rules and handover guide for AI agents/contributors |
+| [`RULES.md`](RULES.md) | Mandatory testing and visual verification rules |
 | [`docs/CONTEXT.md`](docs/CONTEXT.md) | Product context, decisions, environment |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Module and runtime architecture |
 | [`docs/PORTING_STRATEGY.md`](docs/PORTING_STRATEGY.md) | What is reused vs rebuilt from Android |

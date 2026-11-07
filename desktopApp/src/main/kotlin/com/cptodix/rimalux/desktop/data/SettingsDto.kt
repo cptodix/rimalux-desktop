@@ -29,7 +29,8 @@ data class SettingsFileDto(
     val autoChange: AutoChangeDto = AutoChangeDto(),
     val currentSet: WallpaperSetDto? = null,
     val history: List<WallpaperSetDto> = emptyList(),
-    val userPalettes: List<PaletteDto> = emptyList()
+    val userPalettes: List<PaletteDto> = emptyList(),
+    val deletedPaletteIds: List<String> = emptyList()
 )
 
 @Serializable
@@ -119,7 +120,8 @@ data class PaletteDto(
 object SettingsMapper {
 
     fun toDomain(dto: SettingsFileDto): DesktopSettings {
-        val palettes = resolvePalettes(dto.userPalettes)
+        val deletedPaletteIds = dto.deletedPaletteIds.toSet()
+        val palettes = resolvePalettes(dto.userPalettes, deletedPaletteIds)
         val paletteIds = palettes.map { it.id }.toSet()
         val selectedPaletteIds = dto.generation.selectedPaletteIds
             .filter { it in paletteIds }
@@ -182,7 +184,8 @@ object SettingsMapper {
             ),
             currentSet = dto.currentSet?.toDomain(),
             history = dto.history.map { it.toDomain() }.take(24),
-            userPalettes = palettes
+            userPalettes = palettes,
+            deletedPaletteIds = deletedPaletteIds
         )
     }
 
@@ -232,16 +235,25 @@ object SettingsMapper {
         ),
         currentSet = settings.currentSet?.toDto(),
         history = settings.history.take(24).map { it.toDto() },
-        userPalettes = settings.resolvedPalettes().map { it.toDto() }
+        userPalettes = settings.resolvedPalettes().map { it.toDto() },
+        deletedPaletteIds = settings.deletedPaletteIds.toList()
     )
 
-    private fun resolvePalettes(palettes: List<PaletteDto>): List<ColorPalette> {
+    private fun resolvePalettes(
+        palettes: List<PaletteDto>,
+        deletedIds: Set<String>
+    ): List<ColorPalette> {
         val decoded = palettes
             .filter { it.colors.isNotEmpty() }
             .map { ColorPalette(id = it.id, name = it.name, colors = it.colors) }
-        if (decoded.isEmpty()) return StarterPalettes.defaults
+        if (decoded.isEmpty()) {
+            return StarterPalettes.defaults.filterNot { it.id in deletedIds }
+                .ifEmpty { StarterPalettes.defaults }
+        }
         val existing = decoded.map { it.id }.toSet()
-        val missing = StarterPalettes.defaults.filterNot { it.id in existing }
+        val missing = StarterPalettes.defaults.filter {
+            it.id !in existing && it.id !in deletedIds
+        }
         return decoded + missing
     }
 

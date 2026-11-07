@@ -152,13 +152,13 @@ data class DesktopSettings(
     val autoChange: AutoChangeSettings = AutoChangeSettings(),
     val currentSet: WallpaperSet? = null,
     val history: List<WallpaperSet> = emptyList(),
-    val userPalettes: List<ColorPalette> = StarterPalettes.defaults
+    val userPalettes: List<ColorPalette> = StarterPalettes.defaults,
+    val deletedPaletteIds: Set<String> = emptySet()
 ) {
     fun resolvedPalettes(): List<ColorPalette> {
-        val deletedIds = emptySet<String>()
         val existingIds = userPalettes.map { it.id }.toSet()
         val missingStarters = StarterPalettes.defaults.filter {
-            it.id !in existingIds && it.id !in deletedIds
+            it.id !in existingIds && it.id !in deletedPaletteIds
         }
         return (userPalettes + missingStarters).ifEmpty { StarterPalettes.defaults }
     }

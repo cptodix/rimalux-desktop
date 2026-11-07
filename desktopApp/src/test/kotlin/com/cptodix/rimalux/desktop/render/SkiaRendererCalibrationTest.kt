@@ -78,6 +78,54 @@ class SkiaRendererCalibrationTest {
     }
 
     @Test
+    fun previewRenderer_usesHighResolutionLongEdgeWithoutDistortingAspect() {
+        val palette = RandomPaletteGenerator.generate(7L)
+        val landscapeScene = MathPatternGenerator.generate(
+            seed = 7L,
+            pattern = ArtPattern.SILK_RIBBONS,
+            intricacy = 0.5f,
+            aspectRatio = 9f / 16f
+        )
+        val landscape = SynthesizedWallpaper(
+            seed = 7L,
+            pattern = ArtPattern.SILK_RIBBONS,
+            paletteColors = palette,
+            colorFillMode = ColorFillMode.GRADIENT,
+            pitchBlackRatio = 0.85f,
+            intricacy = 0.5f,
+            aspectRatio = landscapeScene.aspectRatio,
+            scene = landscapeScene,
+            ratioStats = landscapeScene.computeStats(0.85f)
+        )
+        val landscapePreview = SkiaWallpaperRenderer.renderPreview(
+            landscape,
+            maxLongEdgePx = 1920
+        )
+        assertTrue(landscapePreview.widthPx == 1920)
+        assertTrue(landscapePreview.heightPx == 1080)
+        runCatching { landscapePreview.image.close() }
+
+        val portraitScene = MathPatternGenerator.generate(
+            seed = 7L,
+            pattern = ArtPattern.SILK_RIBBONS,
+            intricacy = 0.5f,
+            aspectRatio = 2f
+        )
+        val portrait = landscape.copy(
+            aspectRatio = portraitScene.aspectRatio,
+            scene = portraitScene,
+            ratioStats = portraitScene.computeStats(0.85f)
+        )
+        val portraitPreview = SkiaWallpaperRenderer.renderPreview(
+            portrait,
+            maxLongEdgePx = 1920
+        )
+        assertTrue(portraitPreview.heightPx == 1920)
+        assertTrue(portraitPreview.widthPx == 960)
+        runCatching { portraitPreview.image.close() }
+    }
+
+    @Test
     fun previewRenderer_keepsAspectAndProducesPngBytes() {
         val palette = RandomPaletteGenerator.generate(42L)
         val scene = MathPatternGenerator.generate(
@@ -97,7 +145,7 @@ class SkiaRendererCalibrationTest {
             scene = scene,
             ratioStats = scene.computeStats(0.85f)
         )
-        val preview = SkiaWallpaperRenderer.renderPreview(synthesized, maxWidthPx = 480)
+        val preview = SkiaWallpaperRenderer.renderPreview(synthesized, maxLongEdgePx = 480)
         assertTrue(preview.image.width in 400..520)
         assertTrue(preview.image.height in 200..320)
         assertTrue(preview.measuredBlackPercent in 70..100)

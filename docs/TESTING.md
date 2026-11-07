@@ -1,5 +1,9 @@
 # Testing
 
+> **Read [`../RULES.md`](../RULES.md) first.** Do not take repeated screenshots, do not run the
+> GUI app in the foreground without the user present, and ask before any UI verification.
+> Prefer automated/headless tests, logs, JSON state, and temporary directories.
+
 ## Automated tests
 
 Run all:
@@ -37,6 +41,10 @@ Run all:
 - **`WallpaperBackendTest`**
   - KDE Plasma script generation, URI escaping, screen mapping, custom-command tokenizer.
 
+- **`StudioControllerPrefetchTest`**
+  - Boots the controller against a temporary config/cache directory, waits for the initial set,
+    and verifies the next-wallpaper buffer fills (1–3 sets) without a GUI.
+
 - **`AutostartTest`** (Phase 2, planned)
   - `.desktop` content and Windows registry value formatting.
 
@@ -45,26 +53,28 @@ Run all:
 
 ## Manual Linux checklist
 
-On KDE Plasma Wayland (verified 2026-11-07 unless noted):
+Baseline Phase 0/1 checks were verified on KDE Plasma Wayland. The locked full-bleed UI redesign
+still needs user-guided visual verification per `RULES.md`.
 
-1. [x] `./gradlew :desktopApp:run` opens the window.
-2. [x] Preview renders a wallpaper with no visual corruption.
-3. [x] Randomize changes the wallpaper.
-4. [x] Pattern gallery shows all 80 localized cards.
-5. [x] Palette gallery shows 41 palettes and swatches.
-6. [x] True-black slider updates the preview and measured percentage.
-7. [x] Single/range modes are present.
-8. [x] Normal/center-weighted controls are present.
-9. [x] Solid/gradient controls are present.
-10. [x] Display selector shows eDP-1 at 1920×1080.
-11. [x] Apply wallpaper changes the desktop (status: 90% true black).
-12. [x] PNG export covered by `WallpaperFileStoreTest` (UI save not manually clicked).
-13. [x] Restart restores settings and current wallpaper preview.
-14. [x] Language selector switches EN/ID and persists.
-15. [x] Backend status shows KDE Plasma / per-display supported.
-16. [x] No Compose runtime error dialog after the scroll fix.
-17. [ ] Multi-monitor apply on real hardware (not available).
-18. [ ] Windows backend (Phase 3).
+1. [x] Baseline app launched and rendered a wallpaper.
+2. [x] Baseline patterns/colors/settings content worked.
+3. [x] True-black single/range controls worked.
+4. [x] KDE apply wallpaper worked (90% true black status).
+5. [x] PNG export covered by `WallpaperFileStoreTest`.
+6. [x] Settings and language persisted across restart.
+7. [x] RPM package built and packaged app launched.
+8. [x] Locked full-bleed layout: wallpaper fills window.
+9. [x] Bottom controls: previous / apply / save / next.
+10. [x] Next buffer: first press instant, buffer refills, empty-buffer fallback shows progress.
+11. [x] Info pill: pattern, palette dots, true-black percentage.
+12. [x] Options modal matches Android sheet layout.
+13. [x] Patterns/Colors pages expand to the right in the modal.
+14. [x] Quick Pattern Layout / Color Fill popups.
+15. [x] Desktop Settings opens from the options list row.
+16. [x] Narrow window layout remains usable.
+17. [x] High-resolution 1920 px preview.
+18. [ ] Multi-monitor apply on real hardware (not available).
+19. [ ] Windows backend (Phase 3).
 
 ## Manual GNOME checklist
 

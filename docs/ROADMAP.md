@@ -11,13 +11,14 @@
 - [x] Headless render proof
 - [x] Compose window scaffold
 
-## Phase 1 — Desktop MVP ✅ (single-monitor verification)
+## Phase 1 — Desktop MVP ✅ (locked UI accepted)
 
 - [x] OLED theme and typography
-- [x] Studio screen
-- [x] Patterns screen
-- [x] Colors screen
-- [x] Settings screen
+- [x] Locked full-bleed wallpaper layout (no menu bar / side rail)
+- [x] Bottom media-player controls + info pill
+- [x] Expanding options modal (Patterns/Colors/Settings)
+- [x] Prefetched next-wallpaper buffer
+- [x] Patterns/Colors/Settings panes
 - [x] True-black single/range controls
 - [x] Pattern layout and color fill
 - [x] Per-monitor preview selection
@@ -34,7 +35,7 @@
 - [ ] Final visual polish pass
 - [ ] Verify per-monitor apply on a multi-monitor setup
 
-## Phase 2 — Auto-change
+## Phase 2 — Auto-change 🚧 (in progress)
 
 - [ ] Scheduler with persisted next/last run
 - [ ] Dedupe + catch-up after sleep/restart

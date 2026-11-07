@@ -37,7 +37,9 @@ import com.cptodix.rimalux.oled.wallpaper.engine.PitchBlackMode
 import com.cptodix.rimalux.oled.wallpaper.engine.RandomPaletteGenerator
 import com.cptodix.rimalux.oled.wallpaper.engine.SynthesizedWallpaper
 import com.cptodix.rimalux.oled.wallpaper.engine.WallpaperGeneratorEngine
+import java.util.Collections
 import java.util.Locale
+import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
@@ -50,6 +52,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -69,12 +72,24 @@ class StudioController(
 
     private val generationMutex = Mutex()
     private val applyMutex = Mutex()
-    private val past = ArrayDeque<WallpaperSet>()
-    private val future = ArrayDeque<WallpaperSet>()
+    private val past = ConcurrentLinkedDeque<WallpaperSet>()
+    private val aheadQueue = ConcurrentLinkedDeque<RenderedSet>()
+    private val pastRenderedCache = Collections.synchronizedMap(
+        object : LinkedHashMap<String, RenderedSet>(8, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, RenderedSet>?): Boolean =
+                size > 4
+        }
+    )
     private var synthesisJob: Job? = null
+    private var prefetchJob: Job? = null
     private var configPersistJob: Job? = null
     private var uiPersistJob: Job? = null
+    private var deletedPaletteIds: Set<String> = emptySet()
     private var backend: WallpaperBackend = backendFactory.detect(store.snapshot())
+
+    private companion object {
+        const val PREFETCH_TARGET = 3
+    }
 
     init {
         scope.launch { initialize() }
@@ -91,6 +106,7 @@ class StudioController(
         val selected = snapshot.display.selected(monitors)?.id ?: monitors.first().id
         past.clear()
         past.addAll(snapshot.history)
+        deletedPaletteIds = snapshot.deletedPaletteIds
         backend = backendFactory.detect(snapshot)
         val language = AppLanguage.fromTagOrDefault(snapshot.ui.languageTag)
         Locale.setDefault(language.toLocale())
@@ -129,23 +145,27 @@ class StudioController(
     }
 
     fun previous() {
-        val previous = past.removeFirstOrNull() ?: return
-        _uiState.value.current?.set?.let { future.addFirst(it) }
-        restoreSet(previous, persist = true)
+        val previous = past.pollFirst() ?: return
+        val cached = pastRenderedCache[previous.id]
+        if (cached != null) {
+            scope.launch {
+                commitRenderedSet(cached, pushHistory = false, persist = true)
+            }
+        } else {
+            restoreSet(previous, persist = true)
+        }
     }
 
     fun next() {
-        val next = future.removeFirstOrNull() ?: return
-        _uiState.value.current?.set?.let { past.addFirst(it) }
-        restoreSet(next, persist = true)
-    }
-
-    fun restoreHistorySet(set: WallpaperSet) {
-        val index = past.indexOfFirst { it.id == set.id }
-        if (index < 0) return
-        val target = past.removeAt(index)
-        _uiState.value.current?.set?.let { future.addFirst(it) }
-        restoreSet(target, persist = true)
+        val buffered = aheadQueue.pollFirst()
+        if (buffered != null) {
+            _uiState.update { it.copy(aheadReadyCount = aheadQueue.size) }
+            scope.launch {
+                commitRenderedSet(buffered, pushHistory = true, persist = true)
+            }
+        } else {
+            generateNewSet(pushHistory = true, persist = true)
+        }
     }
 
     fun previewPattern(pattern: ArtPattern) {
@@ -189,24 +209,38 @@ class StudioController(
 
     fun togglePattern(pattern: ArtPattern) {
         updateConfig(RegenerationMode.RESOLVE) { config ->
-            val next = if (pattern in config.selectedPatterns) {
-                config.selectedPatterns - pattern
+            if (config.patternsRandomized) {
+                config.copy(
+                    patternsRandomized = false,
+                    selectedPatterns = setOf(pattern)
+                )
             } else {
-                config.selectedPatterns + pattern
+                val existing = config.selectedPatterns
+                val next = if (pattern in existing && existing.size > 1) {
+                    existing - pattern
+                } else {
+                    existing + pattern
+                }
+                config.copy(selectedPatterns = next)
             }
-            config.copy(selectedPatterns = next)
         }
     }
 
     fun selectAllPatterns() {
         updateConfig(RegenerationMode.RESOLVE) {
-            it.copy(selectedPatterns = ArtPattern.entries.toSet())
+            it.copy(
+                patternsRandomized = false,
+                selectedPatterns = ArtPattern.entries.toSet()
+            )
         }
     }
 
     fun selectNonePatterns() {
         updateConfig(RegenerationMode.RESOLVE) {
-            it.copy(selectedPatterns = emptySet())
+            it.copy(
+                patternsRandomized = false,
+                selectedPatterns = emptySet()
+            )
         }
     }
 
@@ -219,7 +253,15 @@ class StudioController(
     }
 
     fun setPaletteMode(mode: PaletteMode) {
-        updateConfig(RegenerationMode.RESOLVE) { it.copy(paletteMode = mode) }
+        if (_uiState.value.config.paletteMode == mode) return
+        val updated = _uiState.value.config.copy(paletteMode = mode)
+        _uiState.update { it.copy(config = updated) }
+        scheduleConfigPersist(updated)
+        if (mode == PaletteMode.RANDOMIZED) {
+            shuffleColors()
+        } else {
+            regenerateResolving()
+        }
     }
 
     fun togglePalette(paletteId: String) {
@@ -244,9 +286,8 @@ class StudioController(
     }
 
     fun selectNonePalettes() {
-        val first = _uiState.value.userPalettes.firstOrNull()?.id ?: "obsidian_aurora"
         updateConfig(RegenerationMode.RESOLVE) {
-            it.copy(selectedPaletteIds = setOf(first), paletteMode = PaletteMode.PALETTE_LIST)
+            it.copy(selectedPaletteIds = emptySet(), paletteMode = PaletteMode.PALETTE_LIST)
         }
     }
 
@@ -294,11 +335,13 @@ class StudioController(
         )
         val state = _uiState.value
         val palettes = listOf(palette) + state.userPalettes.filterNot { it.id == palette.id }
+        deletedPaletteIds = deletedPaletteIds - palette.id
         _uiState.update { it.copy(userPalettes = palettes) }
         scope.launch {
             store.update {
                 it.copy(
                     userPalettes = palettes,
+                    deletedPaletteIds = deletedPaletteIds,
                     generation = it.generation.copy(
                         paletteMode = PaletteMode.PALETTE_LIST,
                         selectedPaletteIds = it.generation.selectedPaletteIds + palette.id
@@ -318,6 +361,8 @@ class StudioController(
         val state = _uiState.value
         if (state.userPalettes.size <= 1) return
         val palettes = state.userPalettes.filterNot { it.id == paletteId }
+        if (palettes.isEmpty()) return
+        deletedPaletteIds = deletedPaletteIds + paletteId
         _uiState.update { it.copy(userPalettes = palettes) }
         val fallback = palettes.first().id
         val selected = state.config.selectedPaletteIds - paletteId
@@ -327,7 +372,12 @@ class StudioController(
             )
         }
         scope.launch {
-            store.update { it.copy(userPalettes = palettes) }
+            store.update {
+                it.copy(
+                    userPalettes = palettes,
+                    deletedPaletteIds = deletedPaletteIds
+                )
+            }
         }
     }
 
@@ -360,6 +410,14 @@ class StudioController(
     }
 
     private suspend fun buildNewSet(pushHistory: Boolean, persist: Boolean) {
+        commitRenderedSet(
+            rendered = createNewRenderedSet(),
+            pushHistory = pushHistory,
+            persist = persist
+        )
+    }
+
+    private suspend fun createNewRenderedSet(): RenderedSet {
         val state = _uiState.value
         val targets = state.monitors
         val palettes = state.userPalettes
@@ -368,6 +426,7 @@ class StudioController(
         val usedPatterns = ArrayList<ArtPattern>()
         val usedColors = ArrayList<List<Long>>()
         past.forEach { set -> set.items.forEach { usedSeeds += it.seed } }
+        aheadQueue.forEach { set -> set.set.items.forEach { usedSeeds += it.seed } }
         state.current?.set?.items?.forEach { usedSeeds += it.seed }
 
         val primarySeed = newSeed(usedSeeds)
@@ -397,7 +456,7 @@ class StudioController(
         }
         val timestamp = System.currentTimeMillis()
         val setId = "gen_${timestamp}_${primarySeed.toString(16)}"
-        commit(generated, setId, timestamp, pushHistory, persist)
+        return renderGenerated(generated, setId, timestamp, wasAutoScheduled = false)
     }
 
     private fun regeneratePreserving(
@@ -550,18 +609,16 @@ class StudioController(
         )
     }
 
-    private suspend fun commit(
+    private suspend fun renderGenerated(
         generated: List<GeneratedItem>,
         setId: String,
         timestamp: Long,
-        pushHistory: Boolean,
-        persist: Boolean,
         wasAutoScheduled: Boolean = false
-    ) {
+    ): RenderedSet {
         val renderedItems = ArrayList<RenderedItem>(generated.size)
         for (entry in generated) {
             val preview = withContext(Dispatchers.Default) {
-                SkiaWallpaperRenderer.renderPreview(entry.synthesized, maxWidthPx = 960)
+                SkiaWallpaperRenderer.renderPreview(entry.synthesized, maxLongEdgePx = 1920)
             }
             val imageBitmap = preview.image.toComposeImageBitmap()
             runCatching { preview.image.close() }
@@ -578,19 +635,49 @@ class StudioController(
             items = renderedItems.map { it.item },
             wasAutoScheduled = wasAutoScheduled
         )
+        return RenderedSet(set, renderedItems)
+    }
+
+    private suspend fun commit(
+        generated: List<GeneratedItem>,
+        setId: String,
+        timestamp: Long,
+        pushHistory: Boolean,
+        persist: Boolean,
+        wasAutoScheduled: Boolean = false
+    ) {
+        commitRenderedSet(
+            rendered = renderGenerated(generated, setId, timestamp, wasAutoScheduled),
+            pushHistory = pushHistory,
+            persist = persist
+        )
+    }
+
+    private suspend fun commitRenderedSet(
+        rendered: RenderedSet,
+        pushHistory: Boolean,
+        persist: Boolean
+    ) {
         if (pushHistory) {
-            _uiState.value.current?.set?.let { past.addFirst(it) }
-            future.clear()
+            _uiState.value.current?.let { current ->
+                past.removeIf { it.id == current.set.id }
+                past.addFirst(current.set)
+                pastRenderedCache[current.set.id] = current
+                while (past.size > 24) {
+                    past.pollLast()
+                }
+            }
         }
         val history = past.toList()
         _uiState.update {
             it.copy(
-                current = RenderedSet(set, renderedItems),
+                current = rendered,
                 history = history,
                 canGoBack = past.isNotEmpty(),
-                canGoForward = future.isNotEmpty(),
+                canGoForward = false,
                 isGenerating = false,
-                previewError = null
+                previewError = null,
+                aheadReadyCount = aheadQueue.size
             )
         }
         if (persist) {
@@ -601,15 +688,38 @@ class StudioController(
                     display = state.display,
                     ui = state.ui,
                     autoChange = state.autoChange,
-                    currentSet = set,
+                    currentSet = rendered.set,
                     history = history,
                     userPalettes = state.userPalettes
                 )
             }
         }
+        ensurePrefetch()
+    }
+
+    private fun ensurePrefetch() {
+        if (prefetchJob?.isActive == true) return
+        if (aheadQueue.size >= PREFETCH_TARGET) return
+        prefetchJob = scope.launch {
+            try {
+                while (aheadQueue.size < PREFETCH_TARGET && isActive) {
+                    val rendered = createNewRenderedSet()
+                    if (!isActive) break
+                    aheadQueue.addLast(rendered)
+                    _uiState.update { it.copy(aheadReadyCount = aheadQueue.size) }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Throwable) {
+                AppLog.error("Wallpaper prefetch failed", error)
+            }
+        }
     }
 
     private fun launchSynthesis(debounceMs: Long = 0, block: suspend () -> Unit) {
+        prefetchJob?.cancel()
+        aheadQueue.clear()
+        _uiState.update { it.copy(aheadReadyCount = 0) }
         synthesisJob?.cancel()
         synthesisJob = scope.launch {
             if (debounceMs > 0) delay(debounceMs)
@@ -972,6 +1082,7 @@ class StudioController(
 
     fun shutdown() {
         synthesisJob?.cancel()
+        prefetchJob?.cancel()
         scope.coroutineContext[Job]?.cancel()
     }
 
@@ -1030,6 +1141,7 @@ class StudioController(
         autoChange = autoChange,
         currentSet = current?.set,
         history = history,
-        userPalettes = userPalettes
+        userPalettes = userPalettes,
+        deletedPaletteIds = deletedPaletteIds
     )
 }

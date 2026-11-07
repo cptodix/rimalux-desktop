@@ -4,6 +4,11 @@ Read this file completely before modifying, extending, or debugging Rimalux Desk
 It defines the architecture, portability contracts, UI rules, platform rules, and verification
 requirements that keep the desktop port aligned with the Android app.
 
+> **Mandatory:** Also read [`RULES.md`](RULES.md). It contains the strict testing and visual
+> verification rules. In particular: do not take repeated screenshots, do not run the GUI app in
+> the foreground without the user present, prefer headless/background tests, and ask before any
+> UI verification.
+
 ---
 
 ## 1. Project identity
@@ -14,8 +19,8 @@ requirements that keep the desktop port aligned with the Android app.
 - **Repository:** `cptodix/rimalux-desktop`
 - **Origin:** Android app `cptodix/rimalux`
 - **License:** GPL-3.0
-- **Current phase:** Phase 0 + Phase 1 complete (desktop MVP, verified on KDE Wayland)
-- **Next phase:** Phase 2 (tray + auto-change)
+- **Current phase:** Phase 2 in progress (tray + auto-change)
+- **Completed:** Phase 0 + Phase 1 (desktop MVP, locked full-bleed UI, accepted by the user)
 - **Target platforms:** Linux (KDE Plasma verified, GNOME/XFCE supported) and Windows (Phase 3)
 
 Rimalux generates procedural mathematical vector wallpapers with an exact `#000000` True Black
@@ -93,10 +98,24 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
 
 ## 5. Desktop UI rules
 
-1. **Desktop-native, not mobile**
-   - No swipe deck, bottom sheet, or phone mockups.
-   - Use a left navigation rail, top app bar, preview pane, and control panel.
-   - Responsive: stack controls below the preview on narrow windows.
+1. **Full-bleed desktop studio, Android-familiar**
+   - The UI must reflect the original Android app, adapted for desktop — not a generic
+     desktop dashboard.
+   - No menu bar, no side navigation rail, no phone mockups.
+   - The wallpaper preview fills the entire window.
+   - Bottom media-player controls: options (left), previous / apply / save / next (center),
+     display selector + layout (right).
+   - A small floating pill above the bottom controls shows the pattern name, palette dots,
+     and measured True Black percentage.
+   - The options button opens a modal styled like the Android settings sheet. Selecting
+     Patterns or Colors expands the modal to the right like a tablet; the left sheet remains
+     visible.
+   - Settings is a row in the options list above “Enjoying Rimalux?” and opens in the expanded
+     right pane.
+   - Patterns and Colors panes must match the Android options/behavior: mode segmented controls,
+     category filters only in custom mode, select all/none, current-pattern highlight, palette
+     removal, and no extra search/fill controls.
+   - Keep the wallpaper as the visual centerpiece; avoid persistent chrome.
 
 2. **OLED Material 3 theme**
    - Background/surface are pure `#000000`.
@@ -113,8 +132,10 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
 
 4. **Interaction**
    - All interactive controls need keyboard focus and visible focus states.
-   - Provide keyboard shortcuts: `Space` randomize, `←/→` history, `Ctrl+S` save,
-     `Ctrl+Enter` apply, `F11` fullscreen preview (when implemented), `Esc` close.
+   - Provide keyboard shortcuts: `Space`/`→` next wallpaper, `←` previous wallpaper,
+     `Ctrl+S` save, `Ctrl+Enter` apply, `Ctrl+,` open settings, `Esc` close options.
+   - The next wallpaper must be served from a prefetched buffer (target 3 sets); if the buffer
+     runs out, generate on demand and show progress.
    - Show progress for synthesis, apply, and export.
    - Use a snackbar/status line, not blocking dialogs for routine status.
 
@@ -187,8 +208,13 @@ RIMALUX_PACKAGING_JDK=/path/to/full-jdk-21 ./gradlew :desktopApp:packageDeb
 - Windows packaging must run on Windows (jpackage limitation); use the CI matrix.
 - Do not run two Gradle builds concurrently on this machine.
 - Do not commit generated `build/`, `.gradle/`, or cache files.
-- After UI changes, launch the app and inspect the window; after renderer changes, run
-  `SkiaRendererCalibrationTest`.
+- **Testing/visual verification follows [`RULES.md`](RULES.md):**
+  - No repeated screenshots for visual testing.
+  - Never run the GUI app in the foreground without the user present and approving it.
+  - Prefer `./gradlew test`, `--render-test`, `--diagnostics`, logs, JSON state, and temp dirs.
+  - If UI verification is required, ask the user and wait; let them interact and report back.
+  - Do not change the user's wallpaper, settings, or desktop state without permission.
+- After renderer changes, run `SkiaRendererCalibrationTest`. Do not launch a window as a substitute.
 
 Verification checklist:
 
@@ -196,11 +222,10 @@ Verification checklist:
 2. `CoreEnginePortabilityTest` passes.
 3. `SkiaRendererCalibrationTest` passes (all 80 patterns, both fill modes, both weight modes).
 4. `SettingsStoreTest`, `WallpaperFileStoreTest`, `WallpaperBackendTest` pass.
-5. `./gradlew :desktopApp:run` launches the window on KDE Wayland.
-6. Preview, pattern selection, palette selection, true-black slider, apply, and PNG export work.
-7. Settings survive restart.
-8. RPM packaging works with `RIMALUX_PACKAGING_JDK` (verified on this machine).
-9. Docs updated for any behavior change.
+5. Headless render proof passes; no GUI launch is required for routine verification.
+6. If UI verification is requested, follow the ask-first workflow in `RULES.md`.
+7. RPM packaging works with `RIMALUX_PACKAGING_JDK` (verified on this machine).
+8. Docs updated for any behavior change.
 
 ---
 

@@ -92,15 +92,18 @@ WallpaperSet metadata + history + settings JSON
 - `SettingsDto` — serializable DTOs (engine enums stored as string IDs).
 
 ### `desktopApp.controller`
-- `StudioController` — UI state, synthesis jobs, monitor refresh, apply/export.
+- `StudioController` — UI state, synthesis jobs, monitor refresh, apply/export, prefetched
+  next-wallpaper buffer (target 3), and previous rendered-set cache.
 - `StudioUiState` — current rendered set, selected monitor, config, palettes, history,
-  status, backend info.
+  buffer count, status, backend info.
 
 ### `desktopApp.ui`
-- `RimaluxDesktopApp` — window layout, navigation, status snackbar.
-- `StudioScreen`, `PatternsScreen`, `ColorsScreen`, `SettingsScreen`.
-- Components: preview pane, monitor selector/layout, true-black slider, pattern/palette cards,
-  history strip, color picker, dialogs.
+- `RimaluxDesktopApp` — full-window shell, options state, status snackbar.
+- `StudioScreen` — full-bleed wallpaper, info pill, media-player controls, display selector.
+- `OptionsModal` — Android-sheet-style left column that expands right into Patterns / Colors /
+  Settings panes.
+- `PatternsScreen`, `ColorsScreen`, `SettingsScreen` — used as the expanded right panes.
+- Components: pattern/palette cards, true-black controls, display layout, color picker, dialogs.
 - Theme: OLED Material 3, dynamic accent from active palette.
 
 ## Threading
@@ -110,6 +113,8 @@ WallpaperSet metadata + history + settings JSON
 - File writes and wallpaper commands run on `Dispatchers.IO`.
 - A `Mutex` serializes synthesis and apply operations.
 - Slider changes are debounced (~150 ms) before regeneration.
+- A background prefetch job fills up to 3 upcoming rendered sets. Interactive generation cancels
+  and clears the buffer; consuming a buffered set refills it without blocking the UI.
 - Apply/export are cancellable but never run concurrently with a rotation.
 
 ## Rendering contract

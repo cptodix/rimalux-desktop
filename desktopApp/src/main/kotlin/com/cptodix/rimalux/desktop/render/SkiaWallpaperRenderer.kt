@@ -18,6 +18,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skia.Color4f
@@ -125,11 +126,20 @@ object SkiaWallpaperRenderer {
 
     fun renderPreview(
         synthesized: SynthesizedWallpaper,
-        maxWidthPx: Int = 960
+        maxLongEdgePx: Int = 1920
     ): Rendered {
-        val safeWidth = maxWidthPx.coerceIn(160, 1920)
-        val height = (safeWidth * synthesized.aspectRatio).toInt().coerceIn(90, 1920)
-        return renderAndMeasure(synthesized, safeWidth, height)
+        val maxEdge = maxLongEdgePx.coerceIn(320, 2560)
+        val aspect = synthesized.aspectRatio
+        val width: Int
+        val height: Int
+        if (aspect <= 1f) {
+            width = maxEdge
+            height = (maxEdge * aspect).roundToInt().coerceAtLeast(180)
+        } else {
+            width = (maxEdge / aspect).roundToInt().coerceAtLeast(180)
+            height = maxEdge
+        }
+        return renderAndMeasure(synthesized, width, height)
     }
 
     private fun drawScene(

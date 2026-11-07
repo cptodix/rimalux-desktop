@@ -58,19 +58,23 @@ This is the working checklist for AI agents and contributors. Keep statuses curr
 
 ### UI
 - [x] OLED theme and typography.
-- [x] App shell / navigation rail.
-- [x] Studio screen.
-- [x] Preview pane + monitor selector + all-display strip.
-- [x] True-black slider/range.
-- [x] Pattern/color summary cards.
+- [x] Full-bleed wallpaper layout (no menu bar, no side rail).
+- [x] Bottom media-player controls: options, previous, apply, save, next, display selector.
+- [x] Info pill: pattern, palette dots, true-black percentage.
+- [x] Prefetched next-wallpaper buffer (target 3) + previous rendered cache.
+- [x] Options modal styled after the Android sheet.
+- [x] Modal expands right for Patterns / Colors / Settings.
+- [x] Desktop Settings row above “Enjoying Rimalux?”; no duplicate language selector in the modal.
+- [x] Quick Pattern Layout / Color Fill dialogs.
 - [x] Display layout dialog + match-design switch (auto-change targets in Phase 2).
-- [x] History strip.
-- [x] Patterns screen (search, categories, grid, selection).
-- [x] Colors screen (fill/palette modes, grid, custom palette).
-- [x] Settings screen (language, resolution, backend, folders, about).
+- [x] Patterns pane with Android parity (random/custom modes, category filters, select all/none, current-pattern highlight, no search).
+- [x] Colors pane with Android parity (random/custom modes, add/remove palette, select all/none, no fill/shuffle controls).
+- [x] Settings pane (language, resolution, backend, folders, about).
+- [x] 1920 px long-edge preview rendering.
 - [x] Keyboard shortcuts.
 - [x] Status snackbar.
 - [x] EN/ID desktop strings.
+- [x] User-guided visual verification of the locked layout (accepted 2026-11-07).
 
 ### Verification
 - [x] `./gradlew test` passes.
@@ -82,15 +86,16 @@ This is the working checklist for AI agents and contributors. Keep statuses curr
 - [x] Manual language switch test (EN ↔ ID persisted).
 - [x] Settings persistence test (`SettingsStoreTest`).
 - [x] KDE script/custom command tests (`WallpaperBackendTest`).
+- [x] Prefetch buffer test (`StudioControllerPrefetchTest`).
 - [x] RPM package builds with a full JDK (`RIMALUX_PACKAGING_JDK`).
 - [x] Packaged RPM launches.
 - [ ] DEB package (needs `dpkg-deb` on the build host).
 - [ ] Multi-monitor hardware test (machine has one display).
 - [ ] Windows backend test (Phase 3).
 
-## Phase 2 — Auto-change
+## Phase 2 — Auto-change 🚧
 
-- [ ] `AutoChangeScheduler`
+- [ ] `AutoChangeScheduler` (in progress)
 - [ ] Tray + menu
 - [ ] Start at Login (Linux)
 - [ ] Single instance
