@@ -19,9 +19,12 @@ import com.cptodix.rimalux.desktop.platform.AppLog
 import com.cptodix.rimalux.desktop.platform.ApplyResult
 import com.cptodix.rimalux.desktop.platform.AutostartManager
 import com.cptodix.rimalux.desktop.platform.DefaultMonitorProvider
+import com.cptodix.rimalux.desktop.platform.DiagnosticsBundle
 import com.cptodix.rimalux.desktop.platform.MonitorProvider
+import com.cptodix.rimalux.desktop.platform.OsScheduler
 import com.cptodix.rimalux.desktop.platform.PlatformPaths
 import com.cptodix.rimalux.desktop.platform.ProcessRunner
+import com.cptodix.rimalux.desktop.platform.UpdateChecker
 import com.cptodix.rimalux.desktop.platform.WallpaperBackend
 import com.cptodix.rimalux.desktop.platform.WallpaperBackendFactory
 import com.cptodix.rimalux.desktop.platform.WallpaperFileStore
@@ -69,6 +72,8 @@ class StudioController(
     private val backendFactory: WallpaperBackendFactory = WallpaperBackendFactory(runner, paths),
     private val fileStore: WallpaperFileStore = WallpaperFileStore(paths),
     private val autostartManager: AutostartManager = AutostartManager(paths),
+    private val osScheduler: OsScheduler = OsScheduler(paths, runner),
+    private val updateChecker: UpdateChecker = UpdateChecker(),
     private val backendOverride: WallpaperBackend? = null,
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -134,7 +139,8 @@ class StudioController(
             backendInfo = backend.info,
             languageTag = language.languageTag,
             canGoBack = past.isNotEmpty(),
-            canGoForward = false
+            canGoForward = false,
+            osSchedulerInstalled = runCatching { osScheduler.isInstalled() }.getOrDefault(false)
         )
 
         val current = snapshot.currentSet
@@ -352,6 +358,12 @@ class StudioController(
                 lastError = null
             )
         )
+        if (state.osSchedulerInstalled) {
+            scope.launch {
+                osScheduler.install(safeMinutes)
+                    .onFailure { AppLog.warning("Could not update OS scheduler interval", it) }
+            }
+        }
     }
 
     fun setRunAtLogin(enabled: Boolean) {
@@ -1389,6 +1401,83 @@ class StudioController(
     fun openCacheFolder() = openInFileManager(paths.cacheDir)
     fun openPicturesFolder() = openInFileManager(paths.picturesDir)
     fun openLogsFolder() = openInFileManager(paths.logsDir)
+
+    fun exportDiagnostics() {
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { DiagnosticsBundle.write(paths, store) }
+            }.onSuccess { path ->
+                postStatus(UiMessage("desktop_diagnostics_saved", listOf(path.toString())))
+                openInFileManager(path.parent ?: paths.stateDir)
+            }.onFailure { error ->
+                AppLog.error("Could not write diagnostics bundle", error)
+                postStatus(
+                    UiMessage(
+                        "desktop_diagnostics_failed",
+                        listOf(error.localizedMessage ?: "Unknown error")
+                    )
+                )
+            }
+        }
+    }
+
+    fun checkForUpdates() {
+        scope.launch {
+            postStatus(UiMessage("desktop_update_checking"))
+            updateChecker.check().onSuccess { info ->
+                postStatus(
+                    if (info.updateAvailable) {
+                        UiMessage("desktop_update_available", listOf(info.latestVersion))
+                    } else {
+                        UiMessage("desktop_update_current", listOf(info.currentVersion))
+                    }
+                )
+            }.onFailure { error ->
+                postStatus(
+                    UiMessage(
+                        "desktop_update_failed",
+                        listOf(error.localizedMessage ?: "Unknown error")
+                    )
+                )
+            }
+        }
+    }
+
+    fun installOsScheduler() {
+        scope.launch {
+            osScheduler.install(_uiState.value.autoChange.intervalMinutes)
+                .onSuccess {
+                    _uiState.update { it.copy(osSchedulerInstalled = true) }
+                    postStatus(UiMessage("desktop_os_scheduler_installed"))
+                }
+                .onFailure { error ->
+                    postStatus(
+                        UiMessage(
+                            "desktop_os_scheduler_failed",
+                            listOf(error.localizedMessage ?: "Unknown error")
+                        )
+                    )
+                }
+        }
+    }
+
+    fun removeOsScheduler() {
+        scope.launch {
+            osScheduler.remove()
+                .onSuccess {
+                    _uiState.update { it.copy(osSchedulerInstalled = false) }
+                    postStatus(UiMessage("desktop_os_scheduler_removed"))
+                }
+                .onFailure { error ->
+                    postStatus(
+                        UiMessage(
+                            "desktop_os_scheduler_failed",
+                            listOf(error.localizedMessage ?: "Unknown error")
+                        )
+                    )
+                }
+        }
+    }
 
     fun dismissStatus() {
         _uiState.update { it.copy(statusMessage = null) }

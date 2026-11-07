@@ -9,10 +9,11 @@ normal and center-weighted layouts, per-monitor wallpapers, lossless PNG export,
 background auto-change.
 
 > **Status:** Phase 0 + Phase 1 complete and accepted. Phase 2 (auto-change scheduler, tray,
-> Start at Login, single instance, `--background`/`--rotate-now`) is implemented and passes
-> automated tests; user-guided tray/auto-change verification is pending. The Windows backend is
-> Phase 3 — see [`docs/ROADMAP.md`](docs/ROADMAP.md) and
-> [`docs/VERIFICATION.md`](docs/VERIFICATION.md).
+> Start at Login, single instance, `--background`/`--rotate-now`) is implemented and verified in
+> normal use. Phase 3 (Windows backend and CI packaging) and Phase 4 (fullscreen, identify,
+> diagnostics, optional OS scheduler, update check, release automation) are implemented; Windows
+> and real multi-monitor behavior still need hardware verification. See
+> [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/VERIFICATION.md`](docs/VERIFICATION.md).
 
 ---
 
@@ -25,8 +26,14 @@ background auto-change.
 - Android-parity Patterns and Colors panes with multi-column desktop layouts.
 - Auto-change scheduler with persisted next/last run, interval, target displays, dedupe, and
   catch-up after sleep/restart.
-- Tray menu, Start at Login, Keep in Tray, single-instance activation, and `--background` /
-  `--rotate-now` CLI modes.
+- Native tray icon: left click opens Rimalux, right click offers Open, Auto-Change toggle, and
+  Quit. Start at Login, Keep in Tray, and single-instance activation are included.
+- Windows wallpaper backend: `SystemParametersInfoW` global apply plus `IDesktopWallpaper`
+  per-monitor apply, with HKCU Run autostart.
+- Fullscreen preview (F11 or double-click) and a display Identify overlay.
+- Support tooling: diagnostics bundle export, GitHub update check, and an optional systemd user
+  timer / Windows Task Scheduler mode.
+- Linux and Windows CI packaging workflows (DEB/RPM, EXE/MSI) and tag-driven releases.
 - Live Skia-rendered previews with exact true-black measurement.
 - 80 patterns, 41 palettes, custom palettes, true-black slider/range.
 - Solid and gradient color fills.
@@ -40,9 +47,9 @@ background auto-change.
 
 ## What comes next
 
-- Phase 2: tray-resident auto-change, start at login, catch-up/dedupe, single instance.
-- Phase 3: Windows wallpaper backend (`SystemParametersInfoW` + `IDesktopWallpaper`), MSI/EXE.
-- Phase 4: release polish, diagnostics, optional systemd/Task Scheduler mode.
+- Hardware verification on Windows 10/11 (global and per-monitor apply, autostart, tray).
+- Multi-monitor verification on real Linux hardware.
+- Iteration on the locked UI and release polish based on user feedback.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
 
@@ -112,7 +119,7 @@ rimalux-desktop/
 | [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md) | Engine sync contract and invariants |
 | [`docs/KNOWLEDGE_BASE.md`](docs/KNOWLEDGE_BASE.md) | Engine math, terminology, resource conventions |
 | [`docs/DESKTOP_UX.md`](docs/DESKTOP_UX.md) | Desktop UI specification |
-| [`docs/AUTO_CHANGE.md`](docs/AUTO_CHANGE.md) | Auto-change design (Phase 2) |
+| [`docs/AUTO_CHANGE.md`](docs/AUTO_CHANGE.md) | Auto-change, tray, and optional OS scheduler |
 | [`docs/LINUX_WALLPAPER_BACKENDS.md`](docs/LINUX_WALLPAPER_BACKENDS.md) | Linux DE support matrix |
 | [`docs/WINDOWS_WALLPAPER_BACKENDS.md`](docs/WINDOWS_WALLPAPER_BACKENDS.md) | Windows APIs and limitations |
 | [`docs/BUILD_AND_RELEASE.md`](docs/BUILD_AND_RELEASE.md) | Build, package, CI, release |

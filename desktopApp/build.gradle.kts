@@ -66,7 +66,9 @@ compose.desktop {
                 "java.desktop",
                 "java.logging",
                 "java.naming",
+                "java.net.http",
                 "java.prefs",
+                "jdk.crypto.ec",
                 "jdk.unsupported"
             )
 

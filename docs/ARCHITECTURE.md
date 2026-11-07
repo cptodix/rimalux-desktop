@@ -22,7 +22,7 @@
 │  data/       JSON settings store, atomic persistence               │
 │  controller/ Studio state, synthesis jobs, apply/export actions    │
 │  ui/         Theme, screens, components, dialogs                   │
-│  scheduler/  Phase 2: auto-change scheduler                        │
+│  scheduler/  Auto-change interval/dedupe policy                   │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -30,7 +30,7 @@
 
 - `core` depends only on Kotlin stdlib.
 - `desktopApp` depends on `core` + Compose Desktop + Skia (via Compose) + coroutines +
-  kotlinx.serialization + JNA (Windows, Phase 3).
+  kotlinx.serialization + JNA (Windows).
 - No Android or Jetpack Compose Android artifacts are used.
 
 ## Runtime data flow
@@ -85,8 +85,14 @@ WallpaperSet metadata + history + settings JSON
 - `GnomeWallpaperBackend` — `gsettings` global apply.
 - `CustomCommandBackend` — `{file}`/`{monitor}` template.
 - `WallpaperFileStore` — renders cache PNGs and saves lossless PNGs to Pictures.
+- `WindowsWallpaperBackend` — `IDesktopWallpaper` COM per-monitor apply with
+  `SystemParametersInfoW` fallback.
 - `AutostartManager` — XDG autostart (Linux) and HKCU Run (Windows).
+- `DesktopTray` — AWT tray icon with left-click open and a three-item context menu.
 - `SingleInstanceManager` — file lock + localhost socket activation.
+- `DiagnosticsBundle` — support ZIP with system/settings/monitor/backend/log data.
+- `OsScheduler` — optional systemd user timer / Windows scheduled task.
+- `UpdateChecker` — GitHub releases version check.
 - `ProcessRunner` — safe command execution with timeout and logs.
 - `scheduler/AutoChangePolicy` — pure interval/dedupe/next-run rules.
 
@@ -168,7 +174,7 @@ defaults. History stores metadata only; previews are regenerated from seeds.
 - Colors
 - Settings
 
-Auto-Change is added as a fifth destination in Phase 2.
+Auto-Change lives inside the options modal rather than as a top-level screen.
 
 ## Localization
 
@@ -187,11 +193,12 @@ Compose Resources re-resolves the environment.
 
 | Capability | Linux | Windows |
 |---|---|---|
-| Monitor detection | AWT + KDE `kscreen-doctor` | AWT; Win32 in Phase 3 |
-| Global wallpaper | KDE, GNOME, XFCE, custom | Phase 3 |
-| Per-monitor wallpaper | KDE, XFCE, Sway/Hyprland best-effort | Phase 3 |
-| Autostart | XDG `.desktop` (Phase 2) | HKCU Run (Phase 2/3) |
-| Tray | Phase 2 | Phase 2/3 |
+| Monitor detection | AWT + KDE `kscreen-doctor` | AWT + `IDesktopWallpaper` device paths |
+| Global wallpaper | KDE, GNOME, XFCE, custom | `SystemParametersInfoW` fallback |
+| Per-monitor wallpaper | KDE, XFCE, Sway/Hyprland best-effort | `IDesktopWallpaper` (Windows 8+) |
+| Autostart | XDG `.desktop` | HKCU Run |
+| Tray | AWT `SystemTray` | AWT `SystemTray` |
+| Optional OS scheduler | systemd user timer | Task Scheduler |
 | Lock screen | Not promised | Not supported by Windows |
 
 See [`LINUX_WALLPAPER_BACKENDS.md`](LINUX_WALLPAPER_BACKENDS.md) and

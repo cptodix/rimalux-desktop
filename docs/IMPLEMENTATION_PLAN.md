@@ -105,29 +105,29 @@ This is the working checklist for AI agents and contributors. Keep statuses curr
 - [x] `--background` / `--rotate-now`
 - [x] Logs + last error
 - [x] Scheduler/policy/autostart/single-instance/auto-rotation tests
-- [ ] Manual tray + 1-minute rotation test
+- [x] Manual tray + real auto-change verification
 - [ ] Desktop notifications (optional follow-up)
 
-## Phase 3 — Windows
+## Phase 3 — Windows ✅ (implemented, hardware verification pending)
 
-- [ ] Win32 global backend
-- [ ] IDesktopWallpaper COM backend
-- [ ] Windows monitor provider
-- [ ] HKCU autostart
-- [ ] Windows tray
-- [ ] `--test-backend`
-- [ ] CI MSI/EXE
+- [x] Win32 global backend (`SystemParametersInfoW`)
+- [x] IDesktopWallpaper COM backend
+- [x] Windows monitor enumeration (AWT + COM device paths)
+- [x] HKCU autostart
+- [x] Windows tray (AWT `SystemTray`)
+- [x] `--test-backend`
+- [x] CI MSI/EXE
 - [ ] Human verification checklist
 
-## Phase 4 — Release
+## Phase 4 — Release ✅ (implemented)
 
-- [ ] Fullscreen preview
-- [ ] Identify/reorder displays
-- [ ] Diagnostics bundle
-- [ ] systemd/Task Scheduler mode
-- [ ] Update checker
-- [ ] Signing
-- [ ] Release workflow
+- [x] Fullscreen preview (F11 / double-click)
+- [x] Identify displays
+- [x] Diagnostics bundle
+- [x] systemd/Task Scheduler mode
+- [x] Update checker
+- [ ] Signing (needs release certificate/secrets)
+- [x] Release workflow
 
 ## File map
 

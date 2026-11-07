@@ -130,7 +130,7 @@ DesktopSettings
 ├── generation: GenerationConfig
 ├── display: DisplaySettings
 ├── ui: UiSettings
-├── autoChange: AutoChangeSettings (Phase 2)
+├── autoChange: AutoChangeSettings
 ├── currentSet: WallpaperSet?
 ├── history: List<WallpaperSet>
 └── userPalettes: List<ColorPalette>
@@ -161,5 +161,5 @@ engine must remain free of kotlinx.serialization annotations.
 - Windows lock-screen wallpaper cannot be set by apps.
 - GNOME/Cinnamon/MATE/Budgie use one wallpaper for all monitors.
 - The engine caps wallpapers at 4096 px on the longest axis.
-- Tray support on GNOME may require an AppIndicator extension (Phase 2).
+- Tray support on GNOME may require an AppIndicator extension.
 - Flatpak/Snap sandboxing would block wallpaper commands; distribute deb/rpm/MSI/EXE.

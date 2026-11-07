@@ -215,14 +215,27 @@ fun SettingsScreen(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("auto" to "Auto", "kde" to "KDE", "gnome" to "GNOME", "xfce" to "XFCE", "custom" to "Custom")
-                        .forEach { (id, label) ->
-                            FilterChip(
-                                selected = state.ui.backendOverride == id,
-                                onClick = { controller.setBackendOverride(id) },
-                                label = { Text(label) }
-                            )
+                    val isWindows = System.getProperty("os.name").orEmpty()
+                        .lowercase()
+                        .contains("win")
+                    val backendOptions = buildList {
+                        add("auto" to "Auto")
+                        if (isWindows) {
+                            add("windows" to localizedStringOr("desktop_windows", "Windows"))
+                        } else {
+                            add("kde" to "KDE")
+                            add("gnome" to "GNOME")
+                            add("xfce" to "XFCE")
                         }
+                        add("custom" to localizedStringOr("desktop_custom", "Custom"))
+                    }
+                    backendOptions.forEach { (id, label) ->
+                        FilterChip(
+                            selected = state.ui.backendOverride == id,
+                            onClick = { controller.setBackendOverride(id) },
+                            label = { Text(label) }
+                        )
+                    }
                 }
                 OutlinedTextField(
                     value = customCommand,
@@ -249,8 +262,17 @@ fun SettingsScreen(
                     }
                 }
                 Text(
-                    text = localizedStringOr("desktop_backend_note", "KDE Plasma supports per-display wallpapers. GNOME uses one wallpaper for all displays."
-                    ),
+                    text = if (state.backendInfo.id == "windows") {
+                        localizedStringOr(
+                            "desktop_backend_note_windows",
+                            "Windows uses IDesktopWallpaper for per-display wallpapers and SystemParametersInfoW as a global fallback."
+                        )
+                    } else {
+                        localizedStringOr(
+                            "desktop_backend_note",
+                            "KDE Plasma supports per-display wallpapers. GNOME uses one wallpaper for all displays."
+                        )
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -277,6 +299,69 @@ fun SettingsScreen(
             }
 
             SectionCard(
+                title = localizedStringOr("desktop_os_scheduler", "Background Scheduler"),
+                modifier = Modifier.widthIn(max = 920.dp)
+            ) {
+                Text(
+                    text = if (state.osSchedulerInstalled) {
+                        localizedStringOr("desktop_os_scheduler_on", "Installed — rotates even when Rimalux is closed.")
+                    } else {
+                        localizedStringOr("desktop_os_scheduler_off", "Not installed — the in-app tray scheduler is used.")
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (state.osSchedulerInstalled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = controller::installOsScheduler,
+                        enabled = !state.osSchedulerInstalled
+                    ) {
+                        Text(localizedStringOr("desktop_os_scheduler_install", "Install Scheduler"))
+                    }
+                    OutlinedButton(
+                        onClick = controller::removeOsScheduler,
+                        enabled = state.osSchedulerInstalled
+                    ) {
+                        Text(localizedStringOr("desktop_os_scheduler_remove", "Remove Scheduler"))
+                    }
+                }
+                Text(
+                    text = localizedStringOr(
+                        "desktop_os_scheduler_hint",
+                        "Uses a systemd user timer on Linux or Task Scheduler on Windows. It runs --rotate-now at the auto-change interval."
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            SectionCard(
+                title = localizedStringOr("desktop_support_title", "Support"),
+                modifier = Modifier.widthIn(max = 920.dp)
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = controller::checkForUpdates) {
+                        Text(localizedStringOr("desktop_check_updates", "Check for Updates"))
+                    }
+                    OutlinedButton(onClick = controller::exportDiagnostics) {
+                        Text(localizedStringOr("desktop_export_diagnostics", "Export Diagnostics"))
+                    }
+                }
+                Text(
+                    text = localizedStringOr(
+                        "desktop_diagnostics_hint",
+                        "Diagnostics bundles include system info, redacted settings, monitor/backend state, and recent logs."
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            SectionCard(
                 title = localizedStringOr("desktop_about", "About"),
                 modifier = Modifier.widthIn(max = 920.dp)
             ) {
@@ -298,13 +383,10 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = localizedStringOr("desktop_phase2_note", "Auto-change, tray mode, and Start at Login arrive in Phase 2. Save PNG or use Apply for now."
+                    text = localizedStringOr(
+                        "desktop_shortcuts",
+                        "Keyboard Shortcuts"
                     ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = localizedStringOr("desktop_shortcuts", "Keyboard Shortcuts"),
                     style = MaterialTheme.typography.titleSmall
                 )
                 listOf(
@@ -312,7 +394,8 @@ fun SettingsScreen(
                     "desktop_shortcut_history" to "← / → — Previous / next history",
                     "desktop_shortcut_save" to "Ctrl/Cmd + S — Save PNG",
                     "desktop_shortcut_apply" to "Ctrl/Cmd + Enter — Apply wallpaper",
-                    "desktop_shortcut_settings" to "Ctrl/Cmd + , — Settings"
+                    "desktop_shortcut_settings" to "Ctrl/Cmd + , — Settings",
+                    "desktop_shortcut_fullscreen" to "F11 or double-click — Fullscreen preview"
                 ).forEach { (key, fallback) ->
                     Text(
                         text = localizedStringOr(key, fallback),

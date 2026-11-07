@@ -19,7 +19,7 @@ that cannot be shared.
 | `WallpaperRenderer` (Android Canvas) | Replaced by `SkiaWallpaperRenderer` |
 | `WallpaperManager` apply | Replaced by Linux/Windows wallpaper backends |
 | DataStore preferences | Replaced by JSON settings store |
-| WorkManager + AlarmManager | Replaced by tray-resident scheduler (Phase 2) |
+| WorkManager + AlarmManager | Replaced by tray-resident scheduler + optional OS scheduler |
 | MediaStore / FileProvider share | Replaced by Pictures export, folder open, clipboard |
 | Play Billing tip jar | Removed; optional support links later |
 | Mobile gesture UI / phone mockups | Replaced by desktop-native UI |

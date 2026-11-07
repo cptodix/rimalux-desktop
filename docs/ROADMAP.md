@@ -35,7 +35,7 @@
 - [ ] Final visual polish pass
 - [ ] Verify per-monitor apply on a multi-monitor setup
 
-## Phase 2 — Auto-change ✅ (implemented, verification pending)
+## Phase 2 — Auto-change ✅ (verified in normal use)
 
 - [x] Scheduler with persisted next/last run
 - [x] Dedupe + catch-up after sleep/restart
@@ -47,30 +47,30 @@
 - [x] Failure logging + last error in UI
 - [x] `--background` and `--rotate-now` CLI modes
 - [x] Scheduler/policy/autostart/single-instance/auto-rotation tests
-- [ ] User-guided tray + real auto-change verification
+- [x] Tray + real auto-change verification
 - [ ] Desktop notifications (optional follow-up)
 
-## Phase 3 — Windows
+## Phase 3 — Windows ✅ (implemented, hardware verification pending)
 
-- [ ] `SystemParametersInfoW` global backend
-- [ ] `IDesktopWallpaper` per-monitor backend
-- [ ] Windows monitor enumeration
-- [ ] HKCU autostart
-- [ ] Windows tray
-- [ ] `--test-backend`
-- [ ] MSI/EXE CI build
+- [x] `SystemParametersInfoW` global backend
+- [x] `IDesktopWallpaper` per-monitor backend
+- [x] Windows monitor enumeration (AWT + COM device paths)
+- [x] HKCU autostart
+- [x] Windows tray (AWT `SystemTray`)
+- [x] `--test-backend`
+- [x] MSI/EXE CI build
 - [ ] Human Windows checklist
 
-## Phase 4 — Release polish
+## Phase 4 — Release polish ✅ (implemented)
 
-- [ ] Fullscreen preview
-- [ ] Display reorder/identify workflow
-- [ ] Diagnostics bundle
-- [ ] Optional systemd user timer
-- [ ] Optional Windows Task Scheduler
-- [ ] Update checker
-- [ ] Signed installers
-- [ ] Release automation
+- [x] Fullscreen preview (F11 / double-click)
+- [x] Display identify workflow
+- [x] Diagnostics bundle (`--diagnostics-bundle`, Settings → Support)
+- [x] Optional systemd user timer / Windows Task Scheduler
+- [x] Update checker (`--check-updates`, Settings → Support)
+- [x] CI build + tag-driven release automation
+- [ ] Signed installers (needs release certificate/secrets)
+- [ ] Update checker download/install flow
 
 ## Non-goals
 

@@ -25,9 +25,10 @@ class WallpaperBackendFactory(
     fun detect(settings: DesktopSettings): WallpaperBackend {
         val os = System.getProperty("os.name").orEmpty().lowercase()
         if (os.contains("win")) {
-            return UnsupportedWallpaperBackend(
-                detail = "Windows wallpaper backend is scheduled for Phase 3. PNG export works now."
-            )
+            if (settings.ui.backendOverride == "custom" && settings.ui.customWallpaperCommand.isNotBlank()) {
+                return CustomCommandBackend(runner, settings.ui.customWallpaperCommand)
+            }
+            return WindowsWallpaperBackend()
         }
 
         val override = settings.ui.backendOverride.lowercase()

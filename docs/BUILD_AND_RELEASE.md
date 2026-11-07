@@ -94,22 +94,49 @@ Cross-compilation is not supported by jpackage. Use the CI matrix.
 
 ## CI matrix
 
-```yaml
-Linux:   ubuntu-latest  -> packageDeb, packageRpm
-Windows: windows-latest -> packageMsi, packageExe
-```
+The repository ships two workflows:
 
-Steps:
+- `.github/workflows/build.yml` — tests on Ubuntu, packages DEB/RPM on Linux, packages EXE/MSI
+  on Windows, uploads artifacts.
+- `.github/workflows/release.yml` — on a `v*` tag (or manual dispatch), builds Linux and Windows
+  installers and attaches them to the GitHub release.
+
+Steps in the build workflow:
 
 1. Checkout.
 2. Set up JDK 21 (Temurin).
 3. Set up Gradle.
-4. Install Linux packaging tools / WiX.
-5. `./gradlew test`.
-6. `./gradlew :desktopApp:packageDistributionForCurrentOS -PappVersion=$VERSION`.
-7. Run Windows `--test-backend` (best-effort; skip if no interactive desktop).
-8. Upload artifacts and checksums.
-9. On tag, attach artifacts to the GitHub release.
+4. `./gradlew test`.
+5. Linux: install `rpm`, build `packageDeb` and `packageRpm` with
+   `RIMALUX_PACKAGING_JDK=$JAVA_HOME`.
+6. Windows: install WiX (best-effort), build `packageExe` and `packageMsi`.
+7. Upload artifacts.
+
+Windows MSI packaging is marked best-effort in CI because the WiX toolchain and interactive
+desktop availability vary between runners. Treat a missing MSI as a CI warning, not a code
+failure, until a Windows runner is verified.
+
+## Diagnostics and support
+
+```bash
+# Print backend/monitor report without changing the wallpaper
+rimalux --test-backend
+
+# Write a support ZIP
+rimalux --diagnostics-bundle /tmp/rimalux-diagnostics.zip
+```
+
+The bundle contains system info, redacted settings, monitor/backend state, and recent logs.
+Custom wallpaper commands are redacted.
+
+## Signing
+
+- Windows: optional `signtool` with a code-signing certificate. Unsigned MSI/EXE trigger
+  SmartScreen warnings.
+- Linux: optional GPG signing for repository packages.
+- Document the signing process; do not commit private keys.
+- CI signing is not enabled yet; add repository secrets and a signing step before a stable
+  public release.
 
 ## Artifacts
 
@@ -119,13 +146,6 @@ Steps:
 - `Rimalux-<version>.exe`
 - Portable Linux `.tar.gz` and Windows `.zip` from `createDistributable`
 - `SHA256SUMS.txt`
-
-## Signing
-
-- Windows: optional `signtool` with a code-signing certificate. Unsigned MSI/EXE trigger
-  SmartScreen warnings.
-- Linux: optional GPG signing for repository packages.
-- Document the signing process; do not commit private keys.
 
 ## Release checklist
 

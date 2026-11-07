@@ -72,10 +72,14 @@ Cache:
 
 - Open **Options → Auto-Change** to enable rotation, choose displays, interval, Start at Login,
   and Keep in Tray.
-- The tray menu provides Show, Change Now, Auto-Change, Start at Login, and Quit.
+- Left-click the tray icon to open/focus Rimalux. Right-click for **Open Rimalux Desktop**,
+  **Auto-Change** (toggle), and **Quit Rimalux**.
 - Closing the window hides to tray when Auto-Change or Keep in Tray is enabled.
 - Start at Login writes `~/.config/autostart/rimalux.desktop` in an installed Linux build, or the
   HKCU Run value on Windows.
+- **Settings → Background Scheduler** installs an optional systemd user timer (Linux) or Task
+  Scheduler task (Windows) that runs `--rotate-now` even when the app is closed.
+- **Settings → Support** exports a diagnostics ZIP and checks GitHub for updates.
 
 CLI diagnostics and automation:
 
@@ -94,6 +98,19 @@ CLI diagnostics and automation:
 
 # Perform one rotation (changes the live wallpaper)
 ./gradlew :desktopApp:run --args="--rotate-now"
+
+# Report backend availability and monitors without changing anything
+./gradlew :desktopApp:run --args="--test-backend"
+
+# Write a support diagnostics ZIP
+./gradlew :desktopApp:run --args="--diagnostics-bundle /tmp/rimalux-diagnostics.zip"
+
+# Check GitHub releases
+./gradlew :desktopApp:run --args="--check-updates"
+
+# Optional OS scheduler (minutes)
+./gradlew :desktopApp:run --args="--install-os-scheduler 60"
+./gradlew :desktopApp:run --args="--remove-os-scheduler"
 ```
 
 `--rotate-now` is intended for OS schedulers and manual testing; it changes the live desktop
@@ -172,9 +189,10 @@ Delete or rename:
 
 ## Phase status
 
-- Phase 0 + 1: implemented and verified on KDE Wayland (this document).
-- Phase 2: tray + auto-change (next).
-- Phase 3: Windows backend + installers.
-- Phase 4: release polish.
+- Phase 0 + 1: implemented and verified on KDE Wayland.
+- Phase 2: tray + auto-change (verified in normal use).
+- Phase 3: Windows backend + installers (implemented; Windows hardware verification pending).
+- Phase 4: fullscreen, identify, diagnostics, optional OS scheduler, update check, release
+  automation (implemented).
 
 See [`VERIFICATION.md`](VERIFICATION.md) for the exact test log.

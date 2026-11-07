@@ -198,5 +198,5 @@ default. If shell behavior is required, the user can explicitly use `sh -c '...'
 | GNOME only changes one image | GNOME limitation: one wallpaper for all displays |
 | Command not found | Install the required tool or use a custom command |
 | Works in terminal, not in app | Environment variables (`DBUS_SESSION_BUS_ADDRESS`, `DISPLAY`, `WAYLAND_DISPLAY`) |
-| Wallpaper resets after login | Start Rimalux after login (Phase 2 autostart) |
+| Wallpaper resets after login | Enable Start at Login or install the systemd user timer |
 | Flatpak/Snap build cannot change wallpaper | Sandbox restriction; use deb/rpm |

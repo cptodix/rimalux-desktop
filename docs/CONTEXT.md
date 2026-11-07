@@ -27,10 +27,10 @@ This repository ports the product to **Linux and Windows** as a desktop-native a
 |---|---|
 | UI | Desktop-native Compose Multiplatform layout (no mobile gesture UI) |
 | Code sharing | Engine copied/synced into `core/`; Android repo untouched |
-| Auto-change | Tray-resident app + opt-in Start at Login (Phase 2) |
+| Auto-change | Tray-resident app + opt-in Start at Login + optional OS scheduler |
 | Multi-monitor | Per-monitor from day one where the OS/DE supports it |
 | Localization | English + Bahasa Indonesia from day one |
-| Windows verification | CI build + self-test; human Windows verification before stable release |
+| Windows verification | CI build + `--test-backend`; human Windows verification before stable release |
 
 ## Current environment
 
@@ -46,7 +46,9 @@ This repository ports the product to **Linux and Windows** as a desktop-native a
 
 Phase 0 + Phase 1 are complete. The full-bleed desktop UI mirrors the Android app’s structure
 and was accepted by the user. Phase 2 (auto-change, tray, Start at Login, single instance) is
-implemented and passes automated tests; user verification is pending. Windows is Phase 3. See
+implemented and verified in normal use. Phase 3 (Windows backend + CI packaging) and Phase 4
+(fullscreen, identify, diagnostics, optional OS scheduler, update check, release automation) are
+implemented; Windows and real multi-monitor hardware verification remain. See
 [`VERIFICATION.md`](VERIFICATION.md).
 
 ## Scope of Phase 0 + Phase 1
@@ -66,13 +68,13 @@ Implemented:
 - JSON settings and wallpaper-set history.
 - English/Indonesian resources.
 
-Not in Phase 1:
+Added after Phase 1:
 
-- Tray, auto-change scheduler, start at login (Phase 2).
+- Tray, auto-change scheduler, start at login, single instance (Phase 2).
 - Windows `IDesktopWallpaper` backend and installers (Phase 3).
-- Systemd/Task Scheduler mode (Phase 4).
-- Fullscreen preview, update checker (Phase 4).
-- Lock-screen wallpaper (not supported on Windows; inconsistent on Linux).
+- Systemd/Task Scheduler mode, fullscreen preview, display identify, diagnostics bundle,
+  update checker, CI release automation (Phase 4).
+- Lock-screen wallpaper remains out of scope (not supported on Windows; inconsistent on Linux).
 
 ## Non-goals
 

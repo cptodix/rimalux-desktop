@@ -34,6 +34,10 @@
 | `AutostartManagerTest` | Pass — Linux XDG autostart entry |
 | `SingleInstanceManagerTest` | Pass — second instance notifies first |
 | `StudioControllerAutoChangeTest` | Pass — fake clock/backend rotation |
+| `WindowsWallpaperBackendTest` | Pass — fit-mode mapping, index clamping, availability |
+| `UpdateCheckerTest` | Pass — dotted version comparison |
+| `OsSchedulerTest` | Pass — systemd unit content |
+| `DiagnosticsBundleTest` | Pass — ZIP contents + command redaction |
 | `./gradlew test` | BUILD SUCCESSFUL |
 
 The headless render proof produced 1920×1080 PNGs with measured true black at 85–86% for a
@@ -50,9 +54,12 @@ The headless render proof produced 1920×1080 PNGs with measured true black at 8
 | Settings survive restart | Pass |
 | KDE apply wallpaper | Pass — in-app status: “Applied to 1 display(s) · 90% true black” |
 | Per-monitor apply on multi-monitor hardware | Not tested — verification machine has one display |
-| Windows MSI/EXE | Not tested — Phase 3 |
-| Auto-change / tray / start at login | Implemented; user-guided runtime verification pending |
+| Windows MSI/EXE | CI workflow added; not yet run on Windows hardware |
+| Auto-change / tray / start at login | Pass — auto-change and tray verified in normal use |
+| Tray left-click / right-click menu | Pass — left click opens; right click shows Open / Auto-Change / Quit |
 | Auto-change scheduler tests | Pass — policy, autostart, single instance, fake rotation |
+| Windows backend tests | Pass — pure mapping helpers; real COM apply pending Windows hardware |
+| Fullscreen / Identify / diagnostics / update check | Implemented; automated helper tests pass; UI verification pending |
 | RPM packaging | Pass — `rimalux-0.1.0-1.x86_64.rpm` built with Temurin 21 |
 | Packaged RPM launch | Pass — extracted `/opt/rimalux/bin/Rimalux` launched and appeared in the window list |
 | DEB packaging | Not tested — `dpkg-deb` is not installed on this openSUSE machine |
@@ -65,6 +72,12 @@ app’s structure while adapting it to desktop. No new screenshots were taken, p
 
 ### Notes
 
+- The tray was reworked after user feedback: left click opens the window and right click shows
+  Open / Auto-Change / Quit. The user confirmed auto-change works; tray interaction was verified
+  in normal use after the rework.
+- No GUI launch or screenshot was performed by the agent for the tray rework or Phase 3/4
+  changes, per `RULES.md`. `--test-backend`, `--diagnostics-bundle`, and `--check-updates` were
+  exercised headlessly.
 - The verification run changed the live desktop wallpaper to a generated Rimalux wallpaper.
   Restore the previous Plasma wallpaper from System Settings → Appearance → Wallpaper, or run:
   `plasma-apply-wallpaperimage /usr/share/wallpapers/openSUSEdefault/contents/images/default.png`

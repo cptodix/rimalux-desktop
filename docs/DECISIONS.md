@@ -104,3 +104,38 @@ bounded.
 
 **Why:** It is the supported Plasma scripting API and works on Wayland. `desktop.screen` may
 require a mapping/reorder UI, planned for Phase 2.
+
+## ADR-014 — AWT tray instead of Compose `Tray`
+
+**Decision:** Implement `DesktopTray` directly with `java.awt.SystemTray`.
+
+**Why:** The desktop contract needs a deterministic left-click action (open the window) and a
+three-item right-click menu. AWT gives direct access to `MouseListener`, `PopupMenu`, and
+`CheckboxMenuItem`, while Compose `Tray` hides the underlying `TrayIcon` and platform click
+semantics vary.
+
+## ADR-015 — Windows per-monitor via `IDesktopWallpaper`
+
+**Decision:** Use `Ole32.CoCreateInstance` and a small JNA vtable wrapper for
+`IDesktopWallpaper`, with `SystemParametersInfoW` as the global fallback.
+
+**Why:** `IDesktopWallpaper` is the only public API for per-monitor wallpapers on Windows 8+.
+JNA has no generated binding, but the interface is stable and the vtable wrapper is small. The
+fallback keeps single-monitor and locked-down systems working.
+
+## ADR-016 — In-app scheduler first, OS scheduler optional
+
+**Decision:** Keep the tray-resident scheduler as the primary auto-change mechanism and expose
+the systemd user timer / Windows Task Scheduler as an opt-in setting and CLI flag.
+
+**Why:** The in-app scheduler can update the preview and respect the prefetch buffer. The OS
+scheduler is useful when the app is closed but cannot share in-process state, so it is
+explicitly optional.
+
+## ADR-017 — Diagnostics bundles redact custom commands
+
+**Decision:** Diagnostics ZIPs include system, monitor, backend, and log data plus settings with
+`customWallpaperCommand` replaced by `[redacted]`.
+
+**Why:** Custom commands may contain paths, tokens, or credentials. The rest of the settings are
+safe to share and are needed for support.

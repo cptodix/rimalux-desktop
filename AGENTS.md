@@ -19,9 +19,12 @@ requirements that keep the desktop port aligned with the Android app.
 - **Repository:** `cptodix/rimalux-desktop`
 - **Origin:** Android app `cptodix/rimalux`
 - **License:** GPL-3.0
-- **Current phase:** Phase 2 implemented (auto-change + tray), verification pending
-- **Completed:** Phase 0 + Phase 1 (desktop MVP, locked full-bleed UI, accepted by the user)
-- **Target platforms:** Linux (KDE Plasma verified, GNOME/XFCE supported) and Windows (Phase 3)
+- **Current phase:** Phase 4 implemented; Windows and multi-monitor hardware verification pending
+- **Completed:** Phase 0 + Phase 1 (desktop MVP, locked full-bleed UI, accepted by the user),
+  Phase 2 (auto-change + tray), Phase 3 (Windows backend + CI packaging), Phase 4 (fullscreen,
+  identify, diagnostics, optional OS scheduler, update check, release automation)
+- **Target platforms:** Linux (KDE Plasma verified, GNOME/XFCE supported) and Windows
+  (implemented; hardware verification pending)
 
 Rimalux generates procedural mathematical vector wallpapers with an exact `#000000` True Black
 Ratio, 80 patterns, 41 curated palettes, gradient/solid fills, per-monitor wallpapers, PNG export,
@@ -160,7 +163,7 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
 - Provide a custom-command fallback with `{file}` and `{monitor}` placeholders.
 - Per-monitor support is backend-dependent:
   - KDE Plasma: yes, via Plasma scripting (`qdbus6`/`qdbus`).
-  - Windows: yes, via `IDesktopWallpaper` (Phase 3).
+  - Windows: yes, via `IDesktopWallpaper` (Windows 8+), with `SystemParametersInfoW` fallback.
   - XFCE: yes, via `xfconf-query`.
   - Sway/Hyprland: best-effort via `swaybg`/`swww`/`hyprpaper`.
   - GNOME/Cinnamon/MATE/Budgie: global only; state this in the UI.
@@ -173,7 +176,7 @@ See [`docs/LINUX_WALLPAPER_BACKENDS.md`](docs/LINUX_WALLPAPER_BACKENDS.md) and
 
 ---
 
-## 7. Auto-change rules (Phase 2)
+## 7. Auto-change rules
 
 - Auto-change runs in a tray-resident app, or via an optional OS scheduler.
 - `nextRunEpochMillis` and `lastRunEpochMillis` are persisted in settings.
@@ -243,4 +246,4 @@ Update these documents when behavior changes:
 - `docs/TESTING.md` — test coverage and manual checks.
 - `docs/DECISIONS.md` — new architecture decisions.
 
-Keep docs factual. Mark planned features clearly as **Phase 2/3**, not as implemented.
+Keep docs factual. Mark planned features clearly as planned, not as implemented.

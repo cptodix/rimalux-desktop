@@ -1,7 +1,7 @@
-# Auto-Change Design (Phase 2)
+# Auto-Change Design
 
-> **Status: Phase 2 implemented; user verification pending.** This document is the
-> implementation contract for the auto-change/tray phase.
+> **Status: Phase 2 implemented and verified in normal use; optional OS scheduler implemented in
+> Phase 4.** This document describes the auto-change/tray implementation.
 
 ## Desktop reality
 
@@ -22,12 +22,10 @@ AutoChangeSettings
 ├── lastRunEpochMillis: Long
 ├── runAtLogin: Boolean
 ├── keepInTray: Boolean
-├── targetMonitorIds: Set<String>   # empty = all
-├── matchAcrossDisplays: Boolean
-├── backendId: String
-├── customCommand: String
 └── lastError: String?
 ```
+
+Target displays are stored in `DisplaySettings.targetMonitorIds` (empty = all displays).
 
 ## Scheduler loop
 
@@ -61,17 +59,16 @@ AutoChangeSettings
 
 ## Tray
 
-- Menu:
-  - Show Rimalux
-  - Change Wallpaper Now
-  - Auto-Change: On/Off
-  - Start at Login: On/Off
-  - Quit
+- Left click: open/focus the Rimalux window.
+- Right-click context menu:
+  1. Open Rimalux Desktop
+  2. Auto-Change Wallpaper (checkable toggle)
+  3. Quit Rimalux
 - Close button behavior:
   - If auto-change is enabled or `keepInTray` is on, hide the window.
   - Otherwise quit.
-- If the tray is unavailable (e.g., GNOME without AppIndicator), keep the window visible or run
-  hidden with autostart; the app can still be reopened from the app menu.
+- If the tray is unavailable (e.g., GNOME without AppIndicator), the window stays visible and
+  closing quits; autostart still works but has no tray to return to.
 
 ## Start at Login
 
@@ -117,12 +114,20 @@ Remove the value when disabled. Recreate on startup if missing.
 |---|---|
 | `--background` | Start hidden to tray |
 | `--rotate-now` | Perform one rotation, write state, exit (for OS schedulers/tests) |
-| `--test-backend` | Apply a diagnostic wallpaper and report backend details |
+| `--test-backend` | Report backend availability and monitors without changing the wallpaper |
+| `--diagnostics-bundle [path]` | Write a support ZIP with system/settings/monitor/backend/log data |
+| `--check-updates` | Query GitHub releases and print whether a newer version exists |
+| `--install-os-scheduler [minutes]` | Install the systemd user timer / Windows scheduled task |
+| `--remove-os-scheduler` | Remove the OS-level scheduler |
 | `--list-monitors` | Print monitors and detected backend |
 | `--diagnostics` | Print OS, locale, backend, paths, engine commit |
 | `--version` | Print version |
 
 ## Optional OS scheduler mode
+
+The in-app tray scheduler is primary. The optional OS scheduler runs `--rotate-now` even when
+Rimalux is not running. Install it from **Settings → Background Scheduler** or with
+`--install-os-scheduler [minutes]`.
 
 ### Linux: systemd user timer
 
@@ -134,8 +139,7 @@ Description=Rimalux wallpaper rotation
 
 [Service]
 Type=oneshot
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
-ExecStart=/path/to/rimalux --rotate-now
+ExecStart="/path/to/Rimalux" --rotate-now
 ```
 
 `~/.config/systemd/user/rimalux-rotate.timer`:
@@ -145,38 +149,35 @@ ExecStart=/path/to/rimalux --rotate-now
 Description=Rimalux wallpaper rotation timer
 
 [Timer]
-OnBootSec=5min
+OnBootSec=2min
 OnUnitActiveSec=60min
 Persistent=true
+Unit=rimalux-rotate.service
 
 [Install]
 WantedBy=timers.target
 ```
 
-Enable:
-
-```bash
-systemctl --user daemon-reload
-systemctl --user enable --now rimalux-rotate.timer
-```
-
-Rewrite the timer when the interval changes. Disable when auto-change is turned off.
+The app writes both files, runs `systemctl --user daemon-reload`, and enables the timer. Remove
+it from the UI or with `--remove-os-scheduler`.
 
 ### Windows: Task Scheduler
 
 ```powershell
-schtasks /Create /TN "Rimalux Wallpaper Rotation" /TR "\"C:\Path\To\Rimalux.exe\" --rotate-now" /SC MINUTE /MO 60 /F
+schtasks /Create /TN "RimaluxRotate" /TR "\"C:\Path\To\Rimalux.exe\" --rotate-now" /SC MINUTE /MO 60 /F
 ```
 
-Run only when the user is logged on. Recreate on interval change; delete on disable.
+The task runs only while the user is logged on. Reinstall after changing the interval; remove
+with `--remove-os-scheduler`.
 
 ## Reliability and diagnostics
 
 - Log every rotation: timestamp, set id, monitors, patterns, resolutions, backend, duration,
   success/failure.
-- Show “Last change”, “Next change”, and “Last error” in the Auto-Change screen.
-- Add a “Test backend” button.
-- Add “Copy diagnostics”.
+- Show “Last change”, “Next change”, and “Last error” in the Auto-Change section.
+- **Settings → Support → Export Diagnostics** writes a ZIP with system info, redacted settings,
+  monitor/backend state, and recent logs. Custom commands are redacted.
+- **Settings → Support → Check for Updates** queries the GitHub releases API.
 - Do not delete the currently applied wallpaper file.
 
 ## Tests

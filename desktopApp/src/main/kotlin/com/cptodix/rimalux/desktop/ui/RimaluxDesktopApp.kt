@@ -24,8 +24,10 @@ fun RimaluxDesktopApp(
     controller: StudioController,
     optionsOpen: Boolean,
     optionsPage: OptionsPage,
+    fullscreen: Boolean = false,
     onOptionsOpenChange: (Boolean) -> Unit,
     onOptionsPageChange: (OptionsPage) -> Unit,
+    onToggleFullscreen: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(state.statusMessage) {
@@ -43,6 +45,8 @@ fun RimaluxDesktopApp(
         StudioScreen(
             state = state,
             controller = controller,
+            fullscreen = fullscreen,
+            onToggleFullscreen = onToggleFullscreen,
             onOpenOptions = {
                 onOptionsOpenChange(true)
                 onOptionsPageChange(OptionsPage.NONE)
@@ -50,7 +54,7 @@ fun RimaluxDesktopApp(
             modifier = Modifier.fillMaxSize()
         )
 
-        if (optionsOpen) {
+        if (optionsOpen && !fullscreen) {
             OptionsModal(
                 state = state,
                 controller = controller,

@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,20 +55,32 @@ import com.cptodix.rimalux.desktop.controller.RenderedItem
 import com.cptodix.rimalux.desktop.controller.StudioController
 import com.cptodix.rimalux.desktop.controller.StudioUiState
 import com.cptodix.rimalux.desktop.model.ApplyTarget
+import com.cptodix.rimalux.desktop.model.MonitorInfo
 import com.cptodix.rimalux.desktop.ui.dialogs.DisplayLayoutDialog
 import com.cptodix.rimalux.desktop.ui.localizedString
 import com.cptodix.rimalux.desktop.ui.localizedStringOr
 import com.cptodix.rimalux.desktop.ui.localizedTitle
+import kotlinx.coroutines.delay
 
 @Composable
 fun StudioScreen(
     state: StudioUiState,
     controller: StudioController,
+    fullscreen: Boolean = false,
+    onToggleFullscreen: () -> Unit = {},
     onOpenOptions: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showDisplayLayout by remember { mutableStateOf(false) }
+    var identifyMonitor by remember { mutableStateOf<MonitorInfo?>(null) }
     val rendered = state.selectedRenderedItem
+
+    LaunchedEffect(identifyMonitor) {
+        if (identifyMonitor != null) {
+            delay(2_600L)
+            identifyMonitor = null
+        }
+    }
 
     Box(
         modifier = modifier
@@ -77,7 +92,11 @@ fun StudioScreen(
                 bitmap = rendered.preview,
                 contentDescription = rendered.item.pattern.localizedTitle(),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures(onDoubleTap = { onToggleFullscreen() })
+                    }
             )
         } else {
             Box(
@@ -93,74 +112,80 @@ fun StudioScreen(
             }
         }
 
-        // Bottom readability scrim. The wallpaper remains the centerpiece.
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(230.dp)
-                .background(
-                    Brush.verticalGradient(
-                        0f to Color.Transparent,
-                        0.45f to Color.Black.copy(alpha = 0.18f),
-                        1f to Color.Black.copy(alpha = 0.82f)
-                    )
-                )
-        )
-
-        if (rendered != null) {
-            PreviewInfoPill(
-                rendered = rendered,
+        if (!fullscreen) {
+            // Bottom readability scrim. The wallpaper remains the centerpiece.
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(start = 20.dp, end = 20.dp, bottom = 112.dp)
-            )
-        }
-
-        if (state.isGenerating) {
-            Surface(
-                modifier = Modifier.align(Alignment.Center),
-                shape = MaterialTheme.shapes.medium,
-                color = Color.Black.copy(alpha = 0.72f)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Text(
-                        text = localizedStringOr("desktop_generating", "Generating wallpaper…"),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White,
-                        modifier = Modifier.padding(start = 10.dp)
+                    .fillMaxWidth()
+                    .height(230.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            0f to Color.Transparent,
+                            0.45f to Color.Black.copy(alpha = 0.18f),
+                            1f to Color.Black.copy(alpha = 0.82f)
+                        )
                     )
+            )
+
+            if (rendered != null) {
+                PreviewInfoPill(
+                    rendered = rendered,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(start = 20.dp, end = 20.dp, bottom = 112.dp)
+                )
+            }
+
+            if (state.isGenerating) {
+                Surface(
+                    modifier = Modifier.align(Alignment.Center),
+                    shape = MaterialTheme.shapes.medium,
+                    color = Color.Black.copy(alpha = 0.72f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text(
+                            text = localizedStringOr("desktop_generating", "Generating wallpaper…"),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                    }
                 }
+            }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+            ) {
+                OptionsButton(
+                    onClick = onOpenOptions,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+
+                MediaControls(
+                    state = state,
+                    controller = controller,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+
+                DisplayControls(
+                    state = state,
+                    onSelectMonitor = controller::selectMonitor,
+                    onOpenLayout = { showDisplayLayout = true },
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
             }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp)
-        ) {
-            OptionsButton(
-                onClick = onOpenOptions,
-                modifier = Modifier.align(Alignment.CenterStart)
-            )
-
-            MediaControls(
-                state = state,
-                controller = controller,
-                modifier = Modifier.align(Alignment.Center)
-            )
-
-            DisplayControls(
-                state = state,
-                onSelectMonitor = controller::selectMonitor,
-                onOpenLayout = { showDisplayLayout = true },
-                modifier = Modifier.align(Alignment.CenterEnd)
-            )
+        identifyMonitor?.let { monitor ->
+            IdentifyOverlay(monitor = monitor)
         }
     }
 
@@ -169,8 +194,43 @@ fun StudioScreen(
             state = state,
             onSelectMonitor = controller::selectMonitor,
             onRefresh = controller::refreshMonitors,
+            onIdentify = { monitor ->
+                identifyMonitor = monitor
+                showDisplayLayout = false
+            },
             onDismiss = { showDisplayLayout = false }
         )
+    }
+}
+
+@Composable
+private fun IdentifyOverlay(monitor: MonitorInfo) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.72f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = monitor.name,
+                style = MaterialTheme.typography.displaySmall,
+                color = Color.White
+            )
+            Text(
+                text = "${monitor.widthPx}×${monitor.heightPx}" +
+                    if (monitor.isPrimary) {
+                        " · " + localizedStringOr("desktop_primary", "Primary")
+                    } else {
+                        ""
+                    },
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White.copy(alpha = 0.75f)
+            )
+        }
     }
 }
 

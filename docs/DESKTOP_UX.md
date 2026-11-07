@@ -149,7 +149,8 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 - Fit mode (Fill / Fit / Center / Tile).
 - Backend status, refresh, override chips, custom command, test.
 - Folder shortcuts.
-- About, version, engine commit, license, shortcuts, Phase 2 note.
+- Background scheduler, support (updates + diagnostics), about, version, engine commit,
+  license, shortcuts.
 
 ## Terminology
 
@@ -166,16 +167,29 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 | `Ctrl/Cmd + S` | Save PNG |
 | `Ctrl/Cmd + Enter` | Apply wallpaper |
 | `Ctrl/Cmd + ,` | Open Desktop Settings |
-| `Esc` | Close options modal |
+| `Esc` | Exit fullscreen, then close options modal |
+| `F11` / double-click | Toggle fullscreen preview |
 
 ## Tray and background
 
-- The tray menu shows Rimalux, Change Wallpaper Now, Auto-Change, Start at Login, and Quit.
+- Left-clicking the tray icon opens/focuses the Rimalux window.
+- Right-clicking opens a compact context menu:
+  1. **Open Rimalux Desktop**
+  2. **Auto-Change Wallpaper** (checkable toggle)
+  3. **Quit Rimalux**
 - Closing the window hides to tray when Auto-Change or Keep in Tray is enabled.
 - `--background` starts hidden to tray.
 - `--rotate-now` performs one headless rotation for OS schedulers/tests.
 - Start at Login writes an XDG autostart entry on Linux and an HKCU Run value on Windows.
 - A second launch focuses the running instance instead of starting another scheduler.
+
+## Fullscreen and display identification
+
+- Press `F11` or double-click the wallpaper to toggle fullscreen preview.
+- `Esc` exits fullscreen (and then closes the options modal if it is open).
+- In fullscreen, the bottom controls and info pill are hidden; the wallpaper fills the screen.
+- Display Layout → Identify shows the selected display name and resolution as a temporary
+  overlay so the user can map physical monitors to the app's display list.
 
 ## Accessibility
 

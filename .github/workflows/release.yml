@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (for example v0.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Linux packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install -y rpm
+      - name: Build DEB and RPM
+        run: |
+          export RIMALUX_PACKAGING_JDK="$JAVA_HOME"
+          VERSION="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${VERSION#v}"
+          ./gradlew :desktopApp:packageDeb :desktopApp:packageRpm -PappVersion="$VERSION" --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: |
+            desktopApp/build/compose/binaries/main/deb/*.deb
+            desktopApp/build/compose/binaries/main/rpm/*.rpm
+          if-no-files-found: warn
+
+  windows:
+    name: Windows installers
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install WiX Toolset
+        run: choco install wixtoolset --no-progress -y
+        continue-on-error: true
+      - name: Build EXE and MSI
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $env:RIMALUX_PACKAGING_JDK = $env:JAVA_HOME
+          $version = "${{ github.event.inputs.tag || github.ref_name }}".TrimStart('v')
+          .\gradlew.bat :desktopApp:packageExe :desktopApp:packageMsi -PappVersion=$version --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: |
+            desktopApp/build/compose/binaries/main/exe/*.exe
+            desktopApp/build/compose/binaries/main/msi/*.msi
+          if-no-files-found: warn
+
+  publish:
+    name: Publish release
+    needs: [ linux, windows ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.exe
+            artifacts/**/*.msi

@@ -6,8 +6,8 @@ Start here:
 2. [`../AGENTS.md`](../AGENTS.md) — rules for agents/contributors
 3. [`../RULES.md`](../RULES.md) — mandatory testing and visual verification rules
 4. [`CONTEXT.md`](CONTEXT.md) — goals, decisions, environment
-4. [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) — current checklist
-5. [`ROADMAP.md`](ROADMAP.md) — phase status
+5. [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) — current checklist
+6. [`ROADMAP.md`](ROADMAP.md) — phase status
 
 Architecture and porting:
 

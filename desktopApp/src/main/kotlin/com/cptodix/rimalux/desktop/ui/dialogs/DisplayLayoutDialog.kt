@@ -42,6 +42,7 @@ fun DisplayLayoutDialog(
     state: StudioUiState,
     onSelectMonitor: (String) -> Unit,
     onRefresh: () -> Unit,
+    onIdentify: (MonitorInfo) -> Unit,
     onDismiss: () -> Unit
 ) {
     BasicAlertDialog(onDismissRequest = onDismiss) {
@@ -112,6 +113,15 @@ fun DisplayLayoutDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
+                    if (state.monitors.isNotEmpty()) {
+                        OutlinedButton(
+                            onClick = {
+                                state.selectedMonitor?.let(onIdentify)
+                            }
+                        ) {
+                            Text(localizedStringOr("desktop_identify_display", "Identify"))
+                        }
+                    }
                     OutlinedButton(onClick = onRefresh) {
                         Text(localizedStringOr("desktop_refresh_displays", "Refresh Displays"))
                     }

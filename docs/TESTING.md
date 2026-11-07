@@ -58,10 +58,22 @@ Run all:
   - Fake clock + fake backend; due rotation generates and applies a new set and advances
     last/next run timestamps.
 
+- **`WindowsWallpaperBackendTest`**
+  - Fit-mode → `DESKTOP_WALLPAPER_POSITION` mapping, monitor index clamping, availability flag.
+
+- **`UpdateCheckerTest`**
+  - Dotted version comparison and pre-release handling.
+
+- **`OsSchedulerTest`**
+  - systemd service/timer content and interval clamping.
+
+- **`DiagnosticsBundleTest`**
+  - ZIP contains system/settings/monitor/backend reports and redacts custom commands.
+
 ## Manual Linux checklist
 
-Baseline Phase 0/1 checks were verified on KDE Plasma Wayland. The locked full-bleed UI redesign
-still needs user-guided visual verification per `RULES.md`.
+Baseline Phase 0/1 checks were verified on KDE Plasma Wayland. The locked full-bleed UI was
+accepted by the user on 2026-11-07.
 
 1. [x] Baseline app launched and rendered a wallpaper.
 2. [x] Baseline patterns/colors/settings content worked.
@@ -81,20 +93,31 @@ still needs user-guided visual verification per `RULES.md`.
 16. [x] Narrow window layout remains usable.
 17. [x] High-resolution 1920 px preview.
 18. [ ] Multi-monitor apply on real hardware (not available).
-19. [ ] Windows backend (Phase 3).
+19. [x] Windows backend implemented; hardware verification pending.
 
-### Phase 2 manual checklist (pending)
+### Phase 2 manual checklist (verified)
 
-1. [ ] Enable Auto-Change; verify next-run appears.
-2. [ ] Change interval; verify next-run updates.
-3. [ ] Set Apply To to specific displays; verify only those change.
+1. [x] Enable Auto-Change; verify next-run appears.
+2. [x] Change interval; verify next-run updates.
+3. [ ] Set Apply To to specific displays; verify only those change (single display available).
 4. [ ] Start at Login creates `~/.config/autostart/rimalux.desktop` (installed build).
-5. [ ] Close window with Auto-Change on; verify it hides to tray and keeps running.
-6. [ ] Tray menu Show / Change Now / Auto-Change / Quit work.
+5. [x] Close window with Auto-Change on; verify it hides to tray and keeps running.
+6. [x] Tray icon left-click opens Rimalux; right-click menu shows Open / Auto-Change / Quit.
 7. [ ] Run `--rotate-now`; verify one wallpaper change.
 8. [ ] Launch a second instance; verify it focuses the first.
-9. [ ] Wait for one interval; verify automatic change.
+9. [x] Wait for one interval; verify automatic change.
 10. [ ] Sleep/restart catch-up behavior.
+
+### Phase 3/4 manual checklist
+
+1. [ ] Fullscreen preview via F11 / double-click, exit with Esc (implemented).
+2. [ ] Display Identify overlay from Display Layout (implemented).
+3. [x] Diagnostics bundle export and redaction (`DiagnosticsBundleTest`).
+4. [x] Update-check version comparison (`UpdateCheckerTest`).
+5. [x] systemd unit content (`OsSchedulerTest`).
+6. [ ] Install/remove the systemd user timer on a real session.
+7. [ ] Windows `--test-backend` on Windows hardware.
+8. [ ] Windows MSI/EXE install and per-monitor apply.
 
 ## Manual GNOME checklist
 

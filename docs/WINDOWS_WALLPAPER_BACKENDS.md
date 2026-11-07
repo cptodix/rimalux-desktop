@@ -1,7 +1,8 @@
 # Windows Wallpaper Backends
 
-> **Status:** Phase 3. The Windows app is built in CI; actual wallpaper behavior must be verified
-> on Windows 10/11 hardware or a VM before calling the release stable.
+> **Status: implemented in Phase 3.** The backend, autostart, tray, and CI packaging are in
+> place. Actual wallpaper behavior must still be verified on Windows 10/11 hardware or a VM
+> before calling the release stable.
 
 ## APIs
 
@@ -60,13 +61,15 @@ SetPosition(DESKTOP_WALLPAPER_POSITION_FILL = 4)
 Enable(TRUE)
 ```
 
-Implementation approach:
+Implementation approach (`WindowsWallpaperBackend`):
 
-- Use JNA `COM`/`COM.Release` and a custom vtable wrapper.
-- Match COM monitor device paths to AWT monitors by rect.
-- Apply one PNG per monitor.
-- If COM fails, fall back to `SystemParametersInfoW` with the primary monitor image and show a
-  “global fallback” warning.
+- Use JNA `Ole32.CoCreateInstance` plus a custom vtable wrapper for `IDesktopWallpaper`.
+- Map rendered files to COM monitor device paths by screen index, clamped to the monitor count.
+- Apply one PNG per monitor, set `DWPOS_FILL`/`FIT`/`CENTER`/`TILE`, and force a `#000000`
+  desktop background.
+- If COM fails, fall back to `SystemParametersInfoW` with the first image and report a global
+  fallback warning.
+- Release the COM interface and uninitialize the COM apartment on the calling thread.
 
 ## Lock screen
 
@@ -94,10 +97,11 @@ startup if `runAtLogin` is true and the value is missing.
 
 ## Tray
 
-- Use Compose Desktop `Tray` or AWT `SystemTray`.
-- Menu: Show, Change Wallpaper Now, Auto-Change toggle, Start at Login toggle, Quit.
-- Close-to-tray if auto-change is enabled.
-- Tray notifications for rotation failures (optional for success).
+- AWT `SystemTray` (`DesktopTray`), shared with Linux.
+- Left click opens/focuses the window.
+- Right-click menu: Open Rimalux Desktop, Auto-Change toggle, Quit Rimalux.
+- Close-to-tray if auto-change is enabled or Keep in Tray is on.
+- Notifications are optional; rotation failures are logged and shown as `lastError`.
 
 ## Packaging
 
@@ -111,18 +115,15 @@ startup if `runAtLogin` is true and the value is missing.
 
 Because the developer may not have Windows hardware:
 
-1. **Unit tests** use a fake `WindowsApi` interface for:
-   - path quoting
-   - registry autostart content
-   - monitor mapping
-   - fallback behavior
+1. **Unit tests** cover the pure parts:
+   - fit-mode → `DESKTOP_WALLPAPER_POSITION` mapping
+   - monitor index clamping
+   - autostart entry content
+   - update-version comparison
 2. **CI self-test** (`rimalux --test-backend`):
-   - list monitor count and device paths
-   - apply a generated test image via `SystemParametersInfoW`
-   - read back `HKCU\Control Panel\Desktop\WallPaper`
-   - call `IDesktopWallpaper.GetMonitorDevicePathCount`
-   - call `SetWallpaper`/`GetWallpaper` for the first monitor
-   - write a report; mark “skipped” if the runner has no interactive desktop
+   - list monitors and backend availability
+   - report whether `IDesktopWallpaper` is expected to be usable
+   - never changes the wallpaper
 3. **Human checklist** before stable release:
    - install MSI per-user
    - launch from Start menu

@@ -55,6 +55,7 @@ data class StudioUiState(
     val canGoBack: Boolean = false,
     val canGoForward: Boolean = false,
     val aheadReadyCount: Int = 0,
+    val osSchedulerInstalled: Boolean = false,
     val previewError: String? = null
 ) {
     val selectedMonitor: MonitorInfo?

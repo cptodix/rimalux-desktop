@@ -1,5 +1,6 @@
 package com.cptodix.rimalux.desktop
 
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -10,11 +11,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -28,9 +28,14 @@ import com.cptodix.rimalux.desktop.model.AppLanguage
 import com.cptodix.rimalux.desktop.model.ApplyTarget
 import com.cptodix.rimalux.desktop.platform.AppLog
 import com.cptodix.rimalux.desktop.platform.DefaultMonitorProvider
+import com.cptodix.rimalux.desktop.platform.DesktopTray
+import com.cptodix.rimalux.desktop.platform.DiagnosticsBundle
+import com.cptodix.rimalux.desktop.platform.OsScheduler
 import com.cptodix.rimalux.desktop.platform.PlatformPaths
 import com.cptodix.rimalux.desktop.platform.ProcessRunner
 import com.cptodix.rimalux.desktop.platform.SingleInstanceManager
+import com.cptodix.rimalux.desktop.platform.TrayLabels
+import com.cptodix.rimalux.desktop.platform.UpdateChecker
 import com.cptodix.rimalux.desktop.platform.WallpaperBackendFactory
 import com.cptodix.rimalux.desktop.render.SkiaWallpaperRenderer
 import com.cptodix.rimalux.desktop.resources.Res
@@ -44,10 +49,12 @@ import com.cptodix.rimalux.oled.wallpaper.engine.ColorFillMode
 import com.cptodix.rimalux.oled.wallpaper.engine.PatternWeightMode
 import com.cptodix.rimalux.oled.wallpaper.engine.StarterPalettes
 import com.cptodix.rimalux.oled.wallpaper.engine.WallpaperGeneratorEngine
+import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Locale
+import javax.imageio.ImageIO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -74,6 +81,60 @@ fun main(args: Array<String>) {
 
         args.contains("--diagnostics") -> {
             printDiagnostics(paths, store)
+            return
+        }
+
+        args.contains("--test-backend") -> {
+            printBackendTest(paths, store)
+            return
+        }
+
+        args.contains("--diagnostics-bundle") -> {
+            val index = args.indexOf("--diagnostics-bundle")
+            val target = args.getOrNull(index + 1)
+                ?.takeIf { !it.startsWith("--") }
+                ?.let { Paths.get(it) }
+            val bundle = if (target != null) {
+                DiagnosticsBundle.write(paths, store, target)
+            } else {
+                DiagnosticsBundle.write(paths, store)
+            }
+            println("Diagnostics bundle: ${bundle.toAbsolutePath()}")
+            return
+        }
+
+        args.contains("--check-updates") -> {
+            val result = runBlocking { UpdateChecker().check() }
+            result.onSuccess { info ->
+                if (info.updateAvailable) {
+                    println(
+                        "Update available: ${info.latestVersion} " +
+                            "(current ${info.currentVersion}) ${info.releaseUrl}"
+                    )
+                } else {
+                    println("Rimalux Desktop is up to date (${info.currentVersion}).")
+                }
+            }.onFailure { error ->
+                println("Update check failed: ${error.localizedMessage ?: "Unknown error"}")
+            }
+            return
+        }
+
+        args.contains("--install-os-scheduler") -> {
+            val index = args.indexOf("--install-os-scheduler")
+            val minutes = args.getOrNull(index + 1)
+                ?.toIntOrNull()
+                ?: store.snapshot().autoChange.intervalMinutes
+            OsScheduler(paths).install(minutes)
+                .onSuccess { println("OS scheduler installed every $minutes minute(s).") }
+                .onFailure { println("Could not install OS scheduler: ${it.localizedMessage}") }
+            return
+        }
+
+        args.contains("--remove-os-scheduler") -> {
+            OsScheduler(paths).remove()
+                .onSuccess { println("OS scheduler removed.") }
+                .onFailure { println("Could not remove OS scheduler: ${it.localizedMessage}") }
             return
         }
 
@@ -118,8 +179,20 @@ fun main(args: Array<String>) {
         val state by controller.uiState.collectAsState()
         var optionsOpen by remember { mutableStateOf(false) }
         var optionsPage by remember { mutableStateOf(OptionsPage.NONE) }
-        val trayState = rememberTrayState()
-        var windowVisible by remember { mutableStateOf(true) }
+        var windowVisible by remember { mutableStateOf(!startBackground) }
+        var focusRequest by remember { mutableStateOf(0) }
+        var fullscreen by remember { mutableStateOf(false) }
+        var tray by remember { mutableStateOf<DesktopTray?>(null) }
+        val trayLabels = TrayLabels(
+            tooltip = "Rimalux",
+            open = localizedStringOr("desktop_tray_open", "Open Rimalux Desktop"),
+            autoChange = localizedStringOr("auto_master_toggle", "Auto-Change Wallpaper"),
+            quit = localizedStringOr("desktop_tray_quit", "Quit Rimalux")
+        )
+        val quitWarning = localizedStringOr(
+            "desktop_quit_warning",
+            "Auto-change is enabled. Quit Rimalux and stop background rotation?"
+        )
         val windowState = rememberWindowState(
             position = WindowPosition(Alignment.Center),
             size = DpSize(
@@ -128,26 +201,74 @@ fun main(args: Array<String>) {
             )
         )
 
+        fun quitApp(confirmIfAutoChange: Boolean = false) {
+            if (confirmIfAutoChange && controller.uiState.value.autoChange.enabled) {
+                val choice = javax.swing.JOptionPane.showConfirmDialog(
+                    null,
+                    quitWarning,
+                    "Rimalux",
+                    javax.swing.JOptionPane.YES_NO_OPTION,
+                    javax.swing.JOptionPane.WARNING_MESSAGE
+                )
+                if (choice != javax.swing.JOptionPane.YES_OPTION) return
+            }
+            tray?.remove()
+            controller.shutdown()
+            singleInstance.close()
+            exitApplication()
+        }
+
+        fun showWindow() {
+            windowState.isMinimized = false
+            windowVisible = true
+            focusRequest += 1
+        }
+
         LaunchedEffect(Unit) {
             singleInstance.showSignal.collect {
-                windowVisible = true
+                showWindow()
             }
         }
-        LaunchedEffect(Unit) {
-            if (startBackground && java.awt.SystemTray.isSupported()) {
-                windowVisible = false
+        LaunchedEffect(trayLabels, state.autoChange.enabled) {
+            val current = tray
+            if (current == null) {
+                val bytes = runCatching { Res.readBytes("drawable/rimalux_icon.png") }.getOrNull()
+                val image = bytes?.let {
+                    runCatching { ImageIO.read(ByteArrayInputStream(it)) }.getOrNull()
+                }
+                if (image != null) {
+                    val created = DesktopTray(
+                        image = image,
+                        onOpen = { showWindow() },
+                        onToggleAutoChange = {
+                            val auto = controller.uiState.value.autoChange
+                            controller.setAutoChangeEnabled(!auto.enabled)
+                        },
+                        onQuit = { quitApp(confirmIfAutoChange = true) }
+                    )
+                    created.install(trayLabels, state.autoChange.enabled)
+                    tray = created
+                    if (startBackground) {
+                        windowVisible = !created.isInstalled
+                    }
+                } else if (startBackground) {
+                    windowVisible = true
+                }
+            } else {
+                current.update(trayLabels, state.autoChange.enabled)
             }
+        }
+        DisposableEffect(Unit) {
+            onDispose { tray?.remove() }
         }
 
         Window(
             onCloseRequest = {
                 val keepRunning = state.autoChange.enabled || state.autoChange.keepInTray
-                if (keepRunning && java.awt.SystemTray.isSupported()) {
+                if (keepRunning && tray?.isInstalled == true) {
                     windowVisible = false
                 } else {
-                    controller.shutdown()
-                    singleInstance.close()
-                    exitApplication()
+                    quitApp()
                 }
             },
             state = windowState,
@@ -160,6 +281,20 @@ fun main(args: Array<String>) {
                 } else {
                     val modifier = event.isCtrlPressed || event.isMetaPressed
                     when {
+                        event.key == Key.F11 -> {
+                            fullscreen = !fullscreen
+                            windowState.placement = if (fullscreen) {
+                                WindowPlacement.Fullscreen
+                            } else {
+                                WindowPlacement.Floating
+                            }
+                            true
+                        }
+                        event.key == Key.Escape && fullscreen -> {
+                            fullscreen = false
+                            windowState.placement = WindowPlacement.Floating
+                            true
+                        }
                         event.key == Key.Escape && optionsOpen -> {
                             optionsOpen = false
                             optionsPage = OptionsPage.NONE
@@ -195,6 +330,12 @@ fun main(args: Array<String>) {
                 }
             }
         ) {
+            LaunchedEffect(focusRequest, windowVisible) {
+                if (windowVisible) {
+                    window.toFront()
+                    window.requestFocus()
+                }
+            }
             key(state.languageTag) {
                 RimaluxTheme(
                     paletteColors = state.selectedRenderedItem?.item?.paletteColors
@@ -205,52 +346,47 @@ fun main(args: Array<String>) {
                         controller = controller,
                         optionsOpen = optionsOpen,
                         optionsPage = optionsPage,
+                        fullscreen = fullscreen,
                         onOptionsOpenChange = { optionsOpen = it },
-                        onOptionsPageChange = { optionsPage = it }
+                        onOptionsPageChange = { optionsPage = it },
+                        onToggleFullscreen = {
+                            fullscreen = !fullscreen
+                            windowState.placement = if (fullscreen) {
+                                WindowPlacement.Fullscreen
+                            } else {
+                                WindowPlacement.Floating
+                            }
+                        }
                     )
                 }
             }
         }
-
-        if (java.awt.SystemTray.isSupported()) {
-            Tray(
-                icon = painterResource(Res.drawable.rimalux_icon),
-                state = trayState,
-                tooltip = "Rimalux",
-                onAction = { windowVisible = true },
-                menu = {
-                    Item(
-                        localizedStringOr("desktop_app_title", "Rimalux"),
-                        onClick = { windowVisible = true }
-                    )
-                    Item(
-                        localizedStringOr("desktop_auto_change_now", "Change Now"),
-                        onClick = controller::changeWallpaperNow
-                    )
-                    Separator()
-                    CheckboxItem(
-                        localizedStringOr("auto_master_toggle", "Auto-Change Wallpaper"),
-                        checked = state.autoChange.enabled,
-                        onCheckedChange = controller::setAutoChangeEnabled
-                    )
-                    CheckboxItem(
-                        localizedStringOr("desktop_auto_start_login", "Start at Login"),
-                        checked = state.autoChange.runAtLogin,
-                        onCheckedChange = controller::setRunAtLogin
-                    )
-                    Separator()
-                    Item(
-                        localizedStringOr("desktop_quit", "Quit"),
-                        onClick = {
-                            controller.shutdown()
-                            singleInstance.close()
-                            exitApplication()
-                        }
-                    )
-                }
-            )
-        }
     }
+}
+
+private fun printBackendTest(paths: PlatformPaths, store: SettingsStore) {
+    val settings = store.snapshot()
+    val runner = ProcessRunner()
+    val monitors = DefaultMonitorProvider(runner).listMonitors()
+    val backend = WallpaperBackendFactory(runner, paths).detect(settings)
+    println("Backend: ${backend.info.displayName} (${backend.info.id})")
+    println("Available: ${backend.info.available}")
+    println("Per-monitor: ${backend.info.supportsPerMonitor}")
+    println("Detail: ${backend.info.detail}")
+    println("Monitors: ${monitors.size}")
+    monitors.forEachIndexed { index, monitor ->
+        println(
+            "  [$index] ${monitor.name} ${monitor.widthPx}x${monitor.heightPx} " +
+                "primary=${monitor.isPrimary}"
+        )
+    }
+    println(
+        if (backend.info.available) {
+            "Backend looks usable. No wallpaper was changed by this check."
+        } else {
+            "Backend is not available. PNG export still works."
+        }
+    )
 }
 
 private fun printDiagnostics(paths: PlatformPaths, store: SettingsStore) {
