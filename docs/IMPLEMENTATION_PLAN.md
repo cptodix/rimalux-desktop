@@ -132,6 +132,10 @@ This is the working checklist for AI agents and contributors. Keep statuses curr
 - [x] Display-agnostic preview (no display selector or layout icons)
 - [x] Auto Match native resolution with 4K fallback
 - [x] Advanced Settings rename, resolution popup, folder grid, display identify
+- [x] Advanced Settings row moved into the joined options card
+- [x] Auto-Change Status section in Advanced Settings (next/last/Change Now/mechanism)
+- [x] Auto-Change Apply To list matches the studio Apply popup
+- [x] Left options sheet keeps its width; no back button
 - [x] Remove “Enjoying Rimalux?” card
 - [ ] Signing (needs release certificate/secrets)
 - [x] Release workflow
