@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.cptodix.rimalux.desktop.ui.localizedStringOr
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 data class ChoiceItem(
@@ -223,6 +225,12 @@ fun AnchoredDialog(
 ) {
     if (!visible) return
 
+    var scrimDismissEnabled by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(180)
+        scrimDismissEnabled = true
+    }
+
     Popup(
         popupPositionProvider = remember {
             object : PopupPositionProvider {
@@ -249,7 +257,7 @@ fun AnchoredDialog(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = onDismiss
+                    onClick = { if (scrimDismissEnabled) onDismiss() }
                 )
         ) {
             val density = LocalDensity.current
