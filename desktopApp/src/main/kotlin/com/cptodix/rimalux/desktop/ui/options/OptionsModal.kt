@@ -618,6 +618,7 @@ private fun QuickChoiceDialog(
                 ) {
                     TextButton(
                         onClick = onDismiss,
+                        shape = MaterialTheme.shapes.small,
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )

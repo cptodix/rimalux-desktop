@@ -107,6 +107,7 @@ fun CreatePaletteDialog(
                                 colors += 0xFF82DCEB
                                 editingIndex = colors.lastIndex
                             },
+                            shape = MaterialTheme.shapes.medium,
                             modifier = Modifier.size(42.dp),
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
                         ) {
@@ -121,7 +122,8 @@ fun CreatePaletteDialog(
                                 if (colors.size > 2) colors.removeAt(index)
                             }
                         },
-                        enabled = colors.size > 2 && editingIndex != null
+                        enabled = colors.size > 2 && editingIndex != null,
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Icon(Icons.Rounded.Delete, contentDescription = null)
                         Text(
@@ -141,7 +143,10 @@ fun CreatePaletteDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(
+                        onClick = onDismiss,
+                        shape = MaterialTheme.shapes.small
+                    ) {
                         Text(localizedStringOr("desktop_cancel", "Cancel"))
                     }
                     Button(
@@ -151,7 +156,8 @@ fun CreatePaletteDialog(
                                 colors.any { (it and 0xFFFFFFL) == 0L } -> error = blackError
                                 else -> onSave(name.ifBlank { "Custom" }, colors.toList())
                             }
-                        }
+                        },
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text(localizedStringOr("desktop_save_palette", "Add to List"))
                     }
@@ -274,7 +280,10 @@ fun ColorPickerDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(
+                        onClick = onDismiss,
+                        shape = MaterialTheme.shapes.small
+                    ) {
                         Text(localizedStringOr("desktop_cancel", "Cancel"))
                     }
                     Button(
@@ -285,7 +294,8 @@ fun ColorPickerDialog(
                             } else {
                                 onSelect(argb)
                             }
-                        }
+                        },
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text(localizedStringOr("desktop_apply_color", "Use Color"))
                     }
