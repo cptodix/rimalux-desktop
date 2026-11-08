@@ -45,9 +45,6 @@ import com.cptodix.rimalux.desktop.controller.StudioUiState
 import com.cptodix.rimalux.desktop.scheduler.AutoChangePolicy
 import com.cptodix.rimalux.desktop.ui.localizedString
 import com.cptodix.rimalux.desktop.ui.localizedStringOr
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun AutoChangeSection(
@@ -58,13 +55,13 @@ fun AutoChangeSection(
     var showTargets by remember { mutableStateOf(false) }
     var showInterval by remember { mutableStateOf(false) }
     val auto = state.autoChange
-    val targetSummary = if (
+    val targetSummary = when {
+        state.display.targetMonitorIds.isEmpty() && !state.display.matchAcrossDisplays ->
+            localizedStringOr("desktop_apply_all_separate", "All Displays Separate")
         state.display.targetMonitorIds.isEmpty() ||
-        state.display.targetMonitorIds.size >= state.monitors.size
-    ) {
-        localizedStringOr("desktop_all_displays", "All Displays")
-    } else {
-        localizedString(
+            state.display.targetMonitorIds.size >= state.monitors.size ->
+            localizedStringOr("desktop_all_displays", "All Displays")
+        else -> localizedString(
             "desktop_auto_selected_displays",
             state.display.targetMonitorIds.size
         )
@@ -159,58 +156,6 @@ fun AutoChangeSection(
             }
         }
 
-        if (auto.enabled) {
-            Text(
-                text = if (auto.nextRunEpochMillis > 0L) {
-                    localizedString(
-                        "desktop_auto_next",
-                        formatTimestamp(auto.nextRunEpochMillis)
-                    )
-                } else {
-                    localizedStringOr("desktop_auto_on", "Auto-change is on.")
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-            if (auto.lastRunEpochMillis > 0L) {
-                Text(
-                    text = localizedString(
-                        "desktop_auto_last",
-                        formatTimestamp(auto.lastRunEpochMillis)
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            TextButton(
-                onClick = controller::changeWallpaperNow,
-                modifier = Modifier.heightIn(min = 40.dp)
-            ) {
-                Text(localizedStringOr("desktop_auto_change_now", "Change Now"))
-            }
-            if (auto.lastError != null) {
-                Text(
-                    text = localizedString("desktop_auto_error", auto.lastError),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-        } else {
-            Text(
-                text = localizedStringOr("desktop_auto_off", "Auto-change is off."),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Text(
-            text = localizedStringOr(
-                "desktop_auto_help",
-                "Auto-change runs while Rimalux is open. Use Start at Login and Keep in Tray for background rotation."
-            ),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 
     if (showTargets) {
@@ -310,8 +255,11 @@ private fun AutoTargetDialog(
     controller: StudioController,
     onDismiss: () -> Unit
 ) {
-    val allSelected = state.display.targetMonitorIds.isEmpty() ||
+    val allTargeted = state.display.targetMonitorIds.isEmpty() ||
         state.display.targetMonitorIds.size >= state.monitors.size
+    val sameAll = allTargeted && state.display.matchAcrossDisplays
+    val separateAll = allTargeted && !state.display.matchAcrossDisplays
+
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.large,
@@ -320,108 +268,134 @@ private fun AutoTargetDialog(
         ) {
             Column(
                 modifier = Modifier.padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
                     text = localizedStringOr("desktop_auto_target_title", "Apply To"),
                     style = MaterialTheme.typography.titleLarge
                 )
-                Surface(
+                state.monitors.forEach { monitor ->
+                    TargetOption(
+                        title = monitor.label,
+                        subtitle = if (monitor.isPrimary) {
+                            localizedStringOr("desktop_primary", "Primary")
+                        } else {
+                            null
+                        },
+                        subtitleColor = MaterialTheme.colorScheme.primary,
+                        selected = allTargeted || monitor.id in state.display.targetMonitorIds,
+                        onClick = { controller.toggleAutoTargetMonitor(monitor.id) }
+                    )
+                }
+                TargetOption(
+                    title = localizedStringOr("desktop_all_displays", "All Displays"),
+                    subtitle = localizedStringOr(
+                        "desktop_apply_all_desc",
+                        "Same wallpaper on every display"
+                    ),
+                    selected = sameAll,
                     onClick = {
                         controller.setAutoTargets(emptySet())
+                        controller.setMatchAcrossDisplays(true)
                         onDismiss()
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    color = if (allSelected) {
-                        MaterialTheme.colorScheme.secondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    },
-                    border = BorderStroke(
-                        width = if (allSelected) 1.dp else 0.5.dp,
-                        color = if (allSelected) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
-                        } else {
-                            MaterialTheme.colorScheme.outlineVariant
-                        }
+                    }
+                )
+                TargetOption(
+                    title = localizedStringOr(
+                        "desktop_apply_all_separate",
+                        "All Displays Separate"
                     ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = localizedStringOr("desktop_all_displays", "All Displays"),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
+                    subtitle = if (state.backendInfo.supportsPerMonitor) {
+                        localizedStringOr(
+                            "desktop_apply_all_separate_desc",
+                            "A different wallpaper on each display"
                         )
-                        if (allSelected) {
-                            Icon(
-                                imageVector = Icons.Rounded.Check,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                    } else {
+                        localizedStringOr(
+                            "desktop_apply_all_separate_unsupported",
+                            "This backend applies one wallpaper to all displays"
+                        )
+                    },
+                    selected = separateAll,
+                    enabled = state.backendInfo.supportsPerMonitor,
+                    onClick = {
+                        controller.setAutoTargets(emptySet())
+                        controller.setMatchAcrossDisplays(false)
+                        onDismiss()
                     }
-                }
-                state.monitors.forEach { monitor ->
-                    val selected = allSelected || monitor.id in state.display.targetMonitorIds
-                    Surface(
-                        onClick = { controller.toggleAutoTargetMonitor(monitor.id) },
-                        shape = MaterialTheme.shapes.medium,
-                        color = if (selected) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerHighest
-                        },
-                        border = BorderStroke(
-                            width = if (selected) 1.dp else 0.5.dp,
-                            color = if (selected) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
-                            } else {
-                                MaterialTheme.colorScheme.outlineVariant
-                            }
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = monitor.label,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                if (monitor.isPrimary) {
-                                    Text(
-                                        text = localizedStringOr("desktop_primary", "Primary"),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                            if (selected) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                }
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(
+                        onClick = onDismiss,
+                        shape = MaterialTheme.shapes.small
+                    ) {
                         Text(localizedStringOr("desktop_close", "Close"))
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TargetOption(
+    title: String,
+    subtitle: String? = null,
+    subtitleColor: Color = Color.Unspecified,
+    selected: Boolean,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = MaterialTheme.shapes.medium,
+        color = if (selected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHighest
+        },
+        border = BorderStroke(
+            width = if (selected) 1.dp else 0.5.dp,
+            color = if (selected) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            }
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (subtitleColor == Color.Unspecified) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            subtitleColor
+                        }
+                    )
+                }
+            }
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }
@@ -490,6 +464,7 @@ private fun AutoIntervalDialog(
                         modifier = Modifier.weight(1f)
                     )
                     Button(
+                        shape = MaterialTheme.shapes.medium,
                         onClick = {
                             val minutes = custom.toIntOrNull()
                             if (minutes == null || minutes !in AutoChangePolicy.MIN_INTERVAL_MINUTES..AutoChangePolicy.MAX_INTERVAL_MINUTES) {
@@ -513,7 +488,10 @@ private fun AutoIntervalDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(
+                        onClick = onDismiss,
+                        shape = MaterialTheme.shapes.small
+                    ) {
                         Text(localizedStringOr("desktop_cancel", "Cancel"))
                     }
                 }
@@ -533,10 +511,3 @@ private fun intervalShortLabel(minutes: Int): String = when {
         minutes % 60
     )
 }
-
-private fun formatTimestamp(millis: Long): String =
-    if (millis <= 0L) {
-        ""
-    } else {
-        SimpleDateFormat("EEE HH:mm", Locale.getDefault()).format(Date(millis))
-    }

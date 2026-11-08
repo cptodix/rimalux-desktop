@@ -86,18 +86,18 @@ The modal is a floating dark panel anchored bottom-left. Its left column contain
    - Pattern Layout row with current mode and chevron (quick popup).
    - Colors row with palette summary and chevron.
    - Color Fill Style row with current mode and chevron (quick popup).
+   - **Advanced Settings** row (same typography/height as the rows above).
 2. **Auto-Change card**
    - Master switch, Apply To row, Interval row, Start at Login, Keep in Tray.
-   - Shows next/last change, Change Now, and the last error if any.
-   - Apply To selects all displays or specific monitors.
+   - Apply To lists displays, **All Displays**, and **All Displays Separate**, matching the
+     studio Apply popup.
    - Interval uses presets plus a custom minutes field.
-3. **Advanced Settings** row.
-4. **About footer** with version/credit.
+3. **About footer** with version/credit.
 
 The modal floats above the bottom media controls, so the options button and media controls
-remain visible. It has no title row and no close button; dismiss it by clicking the scrim,
-pressing `Esc`, or selecting the active page again. A back arrow appears only when a right-hand
-page is open.
+remain visible. It has no title row, no close button, and no back button. The left sheet keeps
+the same width when a page opens; clicking the active row again collapses the right pane. Dismiss
+via the scrim or `Esc`.
 
 Language is not duplicated in the options modal; it lives in the Advanced Settings pane.
 
@@ -112,8 +112,8 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 └───────────────────────────┴───────────────────────────────────────┘
 ```
 
-- The left sheet stays visible and scrollable.
-- The right pane shows the existing Patterns, Colors, or Settings content.
+- The left sheet stays visible and scrollable at the same width as the collapsed state.
+- The right pane shows the existing Patterns, Colors, or Advanced Settings content.
 - Clicking the active row again collapses the right pane.
 - Clicking the scrim dismisses the modal.
 - `Esc` dismisses the modal.

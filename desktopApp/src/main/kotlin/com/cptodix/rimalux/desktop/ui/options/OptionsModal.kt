@@ -24,10 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -141,7 +139,7 @@ fun OptionsModal(
                         onPageChange = onPageChange,
                         onQuickDialog = { quickDialog = it },
                         modifier = Modifier
-                            .width(if (page == OptionsPage.NONE) panelWidth else 410.dp)
+                            .width(if (page == OptionsPage.NONE) panelWidth else 430.dp)
                             .fillMaxHeight()
                     )
 
@@ -278,20 +276,6 @@ private fun OptionsLeftPane(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (page != OptionsPage.NONE) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { onPageChange(OptionsPage.NONE) }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = localizedStringOr("desktop_collapse_page", "Collapse page")
-                    )
-                }
-            }
-        }
-
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceContainer,
@@ -456,25 +440,27 @@ private fun OptionsLeftPane(
                     selected = false,
                     onClick = { onQuickDialog(QuickDialog.COLOR_FILL) }
                 )
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
+                )
+                OptionsRow(
+                    title = localizedStringOr("desktop_desktop_settings", "Advanced Settings"),
+                    summary = localizedStringOr(
+                        "desktop_settings_subtitle",
+                        "Advanced desktop behavior, display output, and diagnostics"
+                    ),
+                    selected = page == OptionsPage.SETTINGS,
+                    onClick = {
+                        onPageChange(
+                            if (page == OptionsPage.SETTINGS) OptionsPage.NONE else OptionsPage.SETTINGS
+                        )
+                    }
+                )
             }
         }
 
         AutoChangeSection(state = state, controller = controller)
-
-        OptionsRow(
-            title = localizedStringOr("desktop_desktop_settings", "Advanced Settings"),
-            summary = localizedStringOr(
-                "desktop_settings_subtitle",
-                "Desktop behavior, display output, and diagnostics"
-            ),
-            selected = page == OptionsPage.SETTINGS,
-            leadingIcon = Icons.Rounded.Settings,
-            onClick = {
-                onPageChange(
-                    if (page == OptionsPage.SETTINGS) OptionsPage.NONE else OptionsPage.SETTINGS
-                )
-            }
-        )
 
         Column(
             modifier = Modifier.fillMaxWidth(),

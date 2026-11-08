@@ -86,6 +86,14 @@
     <string name="desktop_autostart_unavailable">Mulai saat Login tidak tersedia: %1$s</string>
     <string name="desktop_auto_interval_saved">Auto-change setiap %1$s</string>
     <string name="desktop_auto_target_saved">Target auto-change diperbarui</string>
+    <string name="desktop_auto_status_title">Status Auto-Change</string>
+    <string name="desktop_auto_status_off">Auto-change nonaktif.</string>
+    <string name="desktop_auto_status_scheduler_tray">Aktif melalui penjadwal latar belakang dan tray.</string>
+    <string name="desktop_auto_status_scheduler">Aktif melalui penjadwal latar belakang.</string>
+    <string name="desktop_auto_status_tray_login">Aktif di tray, termasuk setelah masuk.</string>
+    <string name="desktop_auto_status_tray">Aktif selama Rimalux ada di tray.</string>
+    <string name="desktop_auto_status_login">Aktif selama Rimalux terbuka; Mulai saat Login menjalankannya di latar belakang.</string>
+    <string name="desktop_auto_status_open">Aktif selama Rimalux terbuka.</string>
     <string name="desktop_auto_help">Auto-change berjalan selama Rimalux terbuka. Gunakan Mulai saat Login dan Tetap di Tray untuk rotasi latar belakang.</string>
     <string name="desktop_support_body">Rimalux gratis, tanpa iklan, dan tanpa pelacakan. Jika desktop Anda jadi lebih indah, bintang atau bagikan aplikasi ini.</string>
     <string name="desktop_open_support">Buka GitHub</string>

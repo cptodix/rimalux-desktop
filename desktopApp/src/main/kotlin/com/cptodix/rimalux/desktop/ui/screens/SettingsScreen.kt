@@ -11,6 +11,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -53,10 +54,12 @@ import com.cptodix.rimalux.desktop.model.AppLanguage
 import com.cptodix.rimalux.desktop.model.ApplyTarget
 import com.cptodix.rimalux.desktop.model.FitMode
 import com.cptodix.rimalux.desktop.model.ResolutionMode
-import com.cptodix.rimalux.desktop.ui.components.ScreenHeader
 import com.cptodix.rimalux.desktop.ui.components.SectionCard
 import com.cptodix.rimalux.desktop.ui.localizedString
 import com.cptodix.rimalux.desktop.ui.localizedStringOr
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,18 +80,32 @@ fun SettingsScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        ScreenHeader(
-            title = localizedStringOr("desktop_settings_title", "Advanced Settings"),
-            subtitle = localizedStringOr("desktop_settings_subtitle", "Advanced desktop behavior, display output, and diagnostics"
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+        ) {
+            Text(
+                text = localizedStringOr("desktop_settings_title", "Advanced Settings"),
+                style = MaterialTheme.typography.titleLarge
             )
-        )
+            Text(
+                text = localizedStringOr(
+                    "desktop_settings_subtitle",
+                    "Advanced desktop behavior, display output, and diagnostics"
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             SectionCard(
                 title = localizedStringOr("desktop_language", "Language"),
@@ -218,7 +235,8 @@ fun SettingsScreen(
                                 val w = customWidth.toIntOrNull() ?: 2560
                                 val h = customHeight.toIntOrNull() ?: 1440
                                 controller.setCustomResolution(w, h)
-                            }
+                            },
+                            shape = MaterialTheme.shapes.medium
                         ) {
                             Text(localizedStringOr("desktop_apply", "Apply"))
                         }
@@ -273,7 +291,10 @@ fun SettingsScreen(
                 title = localizedStringOr("desktop_backend", "Wallpaper Backend"),
                 modifier = Modifier.widthIn(max = 920.dp),
                 trailing = {
-                    TextButton(onClick = controller::refreshBackend) {
+                    TextButton(
+                        onClick = controller::refreshBackend,
+                        shape = MaterialTheme.shapes.small
+                    ) {
                         Text(localizedStringOr("desktop_refresh_backend", "Refresh Backend"))
                     }
                 }
@@ -356,12 +377,16 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { controller.setCustomWallpaperCommand(customCommand) }) {
+                    Button(
+                        onClick = { controller.setCustomWallpaperCommand(customCommand) },
+                        shape = MaterialTheme.shapes.medium
+                    ) {
                         Text(localizedStringOr("desktop_apply", "Apply"))
                     }
                     OutlinedButton(
                         onClick = { controller.applyWallpaper(ApplyTarget.SELECTED_DISPLAY) },
-                        enabled = state.current != null && !state.isApplying
+                        enabled = state.current != null && !state.isApplying,
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text(localizedStringOr("desktop_test_backend", "Test Backend"))
                     }
@@ -464,6 +489,71 @@ fun SettingsScreen(
             }
 
             SectionCard(
+                title = localizedStringOr("desktop_auto_status_title", "Auto-Change Status"),
+                modifier = Modifier.widthIn(max = 920.dp)
+            ) {
+                val auto = state.autoChange
+                Text(
+                    text = autoChangeStatusText(state),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (auto.enabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                if (auto.enabled) {
+                    if (auto.nextRunEpochMillis > 0L) {
+                        Text(
+                            text = localizedString(
+                                "desktop_auto_next",
+                                formatTimestamp(auto.nextRunEpochMillis)
+                            ),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    if (auto.lastRunEpochMillis > 0L) {
+                        Text(
+                            text = localizedString(
+                                "desktop_auto_last",
+                                formatTimestamp(auto.lastRunEpochMillis)
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text = localizedStringOr("desktop_auto_never", "Not yet"),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    auto.lastError?.let { error ->
+                        Text(
+                            text = localizedString("desktop_auto_error", error),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                Button(
+                    onClick = controller::changeWallpaperNow,
+                    enabled = state.current != null && !state.isApplying,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = localizedStringOr("desktop_auto_change_now", "Change Now"),
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+
+            SectionCard(
                 title = localizedStringOr("desktop_os_scheduler", "Background Scheduler"),
                 modifier = Modifier.widthIn(max = 920.dp)
             ) {
@@ -483,13 +573,15 @@ fun SettingsScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = controller::installOsScheduler,
-                        enabled = !state.osSchedulerInstalled
+                        enabled = !state.osSchedulerInstalled,
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text(localizedStringOr("desktop_os_scheduler_install", "Install Scheduler"))
                     }
                     OutlinedButton(
                         onClick = controller::removeOsScheduler,
-                        enabled = state.osSchedulerInstalled
+                        enabled = state.osSchedulerInstalled,
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text(localizedStringOr("desktop_os_scheduler_remove", "Remove Scheduler"))
                     }
@@ -509,10 +601,16 @@ fun SettingsScreen(
                 modifier = Modifier.widthIn(max = 920.dp)
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = controller::checkForUpdates) {
+                    OutlinedButton(
+                        onClick = controller::checkForUpdates,
+                        shape = MaterialTheme.shapes.medium
+                    ) {
                         Text(localizedStringOr("desktop_check_updates", "Check for Updates"))
                     }
-                    OutlinedButton(onClick = controller::exportDiagnostics) {
+                    OutlinedButton(
+                        onClick = controller::exportDiagnostics,
+                        shape = MaterialTheme.shapes.medium
+                    ) {
                         Text(localizedStringOr("desktop_export_diagnostics", "Export Diagnostics"))
                     }
                 }
@@ -646,3 +744,46 @@ private fun FolderShortcutButton(
         )
     }
 }
+
+@Composable
+private fun autoChangeStatusText(state: StudioUiState): String {
+    val auto = state.autoChange
+    if (!auto.enabled) {
+        return localizedStringOr("desktop_auto_status_off", "Auto-change is off.")
+    }
+    return when {
+        state.osSchedulerInstalled && auto.keepInTray ->
+            localizedStringOr(
+                "desktop_auto_status_scheduler_tray",
+                "Active via the background scheduler and the tray."
+            )
+        state.osSchedulerInstalled ->
+            localizedStringOr(
+                "desktop_auto_status_scheduler",
+                "Active via the background scheduler."
+            )
+        auto.keepInTray && auto.runAtLogin ->
+            localizedStringOr(
+                "desktop_auto_status_tray_login",
+                "Active in the tray, including after sign-in."
+            )
+        auto.keepInTray ->
+            localizedStringOr(
+                "desktop_auto_status_tray",
+                "Active while Rimalux is in the tray."
+            )
+        auto.runAtLogin ->
+            localizedStringOr(
+                "desktop_auto_status_login",
+                "Active while Rimalux is open; Start at Login launches it in the background."
+            )
+        else ->
+            localizedStringOr(
+                "desktop_auto_status_open",
+                "Active while Rimalux is open."
+            )
+    }
+}
+
+private fun formatTimestamp(millis: Long): String =
+    SimpleDateFormat("EEE HH:mm", Locale.getDefault()).format(Date(millis))

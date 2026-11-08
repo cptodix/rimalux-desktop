@@ -86,6 +86,14 @@
     <string name="desktop_autostart_unavailable">Start at Login is unavailable: %1$s</string>
     <string name="desktop_auto_interval_saved">Auto-change every %1$s</string>
     <string name="desktop_auto_target_saved">Auto-change targets updated</string>
+    <string name="desktop_auto_status_title">Auto-Change Status</string>
+    <string name="desktop_auto_status_off">Auto-change is off.</string>
+    <string name="desktop_auto_status_scheduler_tray">Active via the background scheduler and the tray.</string>
+    <string name="desktop_auto_status_scheduler">Active via the background scheduler.</string>
+    <string name="desktop_auto_status_tray_login">Active in the tray, including after sign-in.</string>
+    <string name="desktop_auto_status_tray">Active while Rimalux is in the tray.</string>
+    <string name="desktop_auto_status_login">Active while Rimalux is open; Start at Login launches it in the background.</string>
+    <string name="desktop_auto_status_open">Active while Rimalux is open.</string>
     <string name="desktop_auto_help">Auto-change runs while Rimalux is open. Use Start at Login and Keep in Tray for background rotation.</string>
     <string name="desktop_support_body">Rimalux is free, ad-free, and tracker-free. If it made your desktop look nice, a star or a share is appreciated.</string>
     <string name="desktop_open_support">Open GitHub</string>
