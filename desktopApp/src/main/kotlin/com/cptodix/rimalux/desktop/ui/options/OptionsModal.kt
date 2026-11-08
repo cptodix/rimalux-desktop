@@ -139,7 +139,13 @@ fun OptionsModal(
                         onPageChange = onPageChange,
                         onQuickDialog = { quickDialog = it },
                         modifier = Modifier
-                            .width(if (page == OptionsPage.NONE) panelWidth else 430.dp)
+                            .width(
+                                if (page == OptionsPage.NONE) {
+                                    panelWidth
+                                } else {
+                                    minOf(430.dp, panelWidth)
+                                }
+                            )
                             .fillMaxHeight()
                     )
 
