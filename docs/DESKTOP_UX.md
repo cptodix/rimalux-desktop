@@ -19,22 +19,34 @@ persistent settings panel.
 │                 ┌────────────────────────────────┐                 │
 │                 │ Pattern · ● ● ● ● · 90% Black  │  info pill      │
 │                 └────────────────────────────────┘                 │
-│  ┌────┐        ┌──────────────────────────────┐        ┌─────────┐ │
-│  │ ☰  │        │  ⏮   [apply]   💾   ⏭        │        │ eDP-1 ▾ │ │
-│  └────┘        └──────────────────────────────┘        └─────────┘ │
+│  ┌────┐        ┌──────────────────────────────┐                       │
+│  │ ☰  │        │  ⏮   [apply]   💾   ⏭        │                       │
+│  └────┘        └──────────────────────────────┘                       │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Bottom controls
 
-- **Bottom left:** circular hamburger button → opens the options modal.
+- **Bottom left:** floating options button → opens the options modal.
 - **Bottom center:** media-player control pill:
   - Previous wallpaper (from history; disabled when history is empty).
-  - Apply wallpaper (primary circular button).
+  - Apply wallpaper (primary button; opens the Apply To popup).
   - Save PNG (lossless export).
   - Next wallpaper (prefetched; instant when the buffer is ready).
-- **Bottom right:** display selector + display-layout button.
+- The preview is not tied to a selected display. There is no display selector or layout button
+  in the studio chrome.
 - A subtle bottom gradient keeps controls readable without hiding the wallpaper.
+
+### Apply To popup
+
+Pressing Apply opens a compact popup above the button:
+
+- Every detected display, with its native resolution.
+- **All Displays** — the current preview design rendered at every display’s resolution.
+- **All Displays Separate** — a distinct generated design per display. This changes the live
+  wallpaper only; the preview stays on the current design.
+
+The popup is disabled while applying and shows a spinner on the Apply button.
 
 ### Info pill
 
@@ -79,20 +91,15 @@ The modal is a floating dark panel anchored bottom-left. Its left column contain
    - Shows next/last change, Change Now, and the last error if any.
    - Apply To selects all displays or specific monitors.
    - Interval uses presets plus a custom minutes field.
-3. **Desktop Settings** row.
-4. **Enjoying Rimalux?** support card.
-5. **About footer** with version/credit.
+3. **Advanced Settings** row.
+4. **About footer** with version/credit.
 
-Language is not duplicated in the options modal; it lives in the Settings pane.
+The modal floats above the bottom media controls, so the options button and media controls
+remain visible. It has no title row and no close button; dismiss it by clicking the scrim,
+pressing `Esc`, or selecting the active page again. A back arrow appears only when a right-hand
+page is open.
 
-The modal header has:
-
-- Back arrow when a right-hand page is open (collapses the page).
-- Close button.
-
-**Desktop Settings** is an options row above the “Enjoying Rimalux?” card. It opens the
-Settings pane in the expanded right column. The options modal itself does not duplicate the
-language selector; language lives in the Settings pane.
+Language is not duplicated in the options modal; it lives in the Advanced Settings pane.
 
 ### Expanded tablet state
 
@@ -108,8 +115,9 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 - The left sheet stays visible and scrollable.
 - The right pane shows the existing Patterns, Colors, or Settings content.
 - Clicking the active row again collapses the right pane.
-- Clicking the scrim or Close dismisses the modal.
+- Clicking the scrim dismisses the modal.
 - `Esc` dismisses the modal.
+- The modal animates in from the bottom and slides/fades out on close.
 
 ### Quick popups
 
@@ -145,10 +153,12 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 ## Settings pane
 
 - Language.
-- Wallpaper resolution (Auto / 1920 / 2560 / 3840 / Custom).
+- Wallpaper resolution as a popup list (Auto Match / 1920 / 2560 / 3840 / Custom), showing the
+  full `W×H` resolution for each option.
 - Fit mode (Fill / Fit / Center / Tile).
 - Backend status, refresh, override chips, custom command, test.
-- Folder shortcuts.
+- Displays list with per-monitor resolution and an Identify action.
+- Folder shortcuts in a two-column grid with icons.
 - Background scheduler, support (updates + diagnostics), about, version, engine commit,
   license, shortcuts.
 
@@ -166,7 +176,7 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 | `←` | Previous wallpaper |
 | `Ctrl/Cmd + S` | Save PNG |
 | `Ctrl/Cmd + Enter` | Apply wallpaper |
-| `Ctrl/Cmd + ,` | Open Desktop Settings |
+| `Ctrl/Cmd + ,` | Open Advanced Settings |
 | `Esc` | Exit fullscreen, then close options modal |
 | `F11` / double-click | Toggle fullscreen preview |
 

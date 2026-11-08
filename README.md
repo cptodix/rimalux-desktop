@@ -27,10 +27,14 @@ background auto-change.
 - Auto-change scheduler with persisted next/last run, interval, target displays, dedupe, and
   catch-up after sleep/restart.
 - Native tray icon: left click opens Rimalux, right click offers Open, Auto-Change toggle, and
-  Quit. Start at Login, Keep in Tray, and single-instance activation are included.
+  Quit. Linux uses a native StatusNotifierItem so KDE Wayland clicks work; Windows uses AWT.
+  Start at Login, Keep in Tray, and single-instance activation are included.
 - Windows wallpaper backend: `SystemParametersInfoW` global apply plus `IDesktopWallpaper`
   per-monitor apply, with HKCU Run autostart.
 - Fullscreen preview (F11 or double-click) and a display Identify overlay.
+- Apply To popup with per-display, All Displays, and All Displays Separate targets.
+- Display-agnostic preview; Auto Match resolution uses each display's native resolution with a
+  4K fallback.
 - Support tooling: diagnostics bundle export, GitHub update check, and an optional systemd user
   timer / Windows Task Scheduler mode.
 - Linux and Windows CI packaging workflows (DEB/RPM, EXE/MSI) and tag-driven releases.

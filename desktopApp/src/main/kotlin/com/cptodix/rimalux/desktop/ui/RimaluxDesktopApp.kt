@@ -1,5 +1,11 @@
 package com.cptodix.rimalux.desktop.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.cptodix.rimalux.desktop.controller.StudioController
 import com.cptodix.rimalux.desktop.controller.StudioUiState
+import com.cptodix.rimalux.desktop.ui.components.DisplayIdentifyOverlay
 import com.cptodix.rimalux.desktop.ui.components.StatusSnackbar
 import com.cptodix.rimalux.desktop.ui.options.OptionsModal
 import com.cptodix.rimalux.desktop.ui.options.OptionsPage
@@ -54,7 +61,17 @@ fun RimaluxDesktopApp(
             modifier = Modifier.fillMaxSize()
         )
 
-        if (optionsOpen && !fullscreen) {
+        AnimatedVisibility(
+            visible = optionsOpen && !fullscreen,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(280)
+            ) + fadeIn(tween(180)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(220)
+            ) + fadeOut(tween(160))
+        ) {
             OptionsModal(
                 state = state,
                 controller = controller,
@@ -65,6 +82,12 @@ fun RimaluxDesktopApp(
                     onOptionsPageChange(OptionsPage.NONE)
                 }
             )
+        }
+
+        state.identifyMonitorId?.let { id ->
+            state.monitors.firstOrNull { it.id == id }?.let { monitor ->
+                DisplayIdentifyOverlay(monitor)
+            }
         }
 
         StatusSnackbar(

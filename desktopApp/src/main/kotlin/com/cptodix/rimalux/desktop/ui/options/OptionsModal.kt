@@ -22,18 +22,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -76,8 +71,6 @@ import com.cptodix.rimalux.oled.wallpaper.engine.ColorFillMode
 import com.cptodix.rimalux.oled.wallpaper.engine.PaletteMode
 import com.cptodix.rimalux.oled.wallpaper.engine.PatternWeightMode
 import com.cptodix.rimalux.oled.wallpaper.engine.PitchBlackMode
-import java.awt.Desktop
-import java.net.URI
 import kotlin.math.roundToInt
 
 enum class OptionsPage {
@@ -101,7 +94,6 @@ fun OptionsModal(
     onDismiss: () -> Unit
 ) {
     var quickDialog by remember { mutableStateOf<QuickDialog?>(null) }
-    var showSupport by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -117,7 +109,7 @@ fun OptionsModal(
             } else {
                 minOf(maxWidth - 32.dp, 1080.dp)
             }
-            val panelHeight = minOf(maxHeight - 32.dp, 780.dp)
+            val panelHeight = minOf(maxHeight - 132.dp, 780.dp).coerceAtLeast(320.dp)
             val panelWidth by animateDpAsState(
                 targetValue = targetWidth,
                 animationSpec = tween(220),
@@ -127,7 +119,7 @@ fun OptionsModal(
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(16.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 104.dp)
                     .width(panelWidth)
                     .height(panelHeight)
                     .clickable(
@@ -135,7 +127,7 @@ fun OptionsModal(
                         indication = null,
                         onClick = {}
                     ),
-                shape = RoundedCornerShape(18.dp),
+                shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 tonalElevation = 0.dp,
                 shadowElevation = 24.dp,
@@ -147,9 +139,7 @@ fun OptionsModal(
                         controller = controller,
                         page = page,
                         onPageChange = onPageChange,
-                        onDismiss = onDismiss,
                         onQuickDialog = { quickDialog = it },
-                        onShowSupport = { showSupport = true },
                         modifier = Modifier
                             .width(if (page == OptionsPage.NONE) panelWidth else 410.dp)
                             .fillMaxHeight()
@@ -227,52 +217,6 @@ fun OptionsModal(
         null -> Unit
     }
 
-    if (showSupport) {
-        BasicAlertDialog(onDismissRequest = { showSupport = false }) {
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp
-            ) {
-                Column(
-                    modifier = Modifier.padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = localizedStringOr("btn_like_the_app", "Enjoying Rimalux?"),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        text = localizedStringOr(
-                            "desktop_support_body",
-                            "Rimalux is free, ad-free, and tracker-free. If it made your desktop look nice, a star or a share is appreciated."
-                        ),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                    ) {
-                        TextButton(onClick = { showSupport = false }) {
-                            Text(localizedStringOr("desktop_close", "Close"))
-                        }
-                        Button(
-                            onClick = {
-                                runCatching {
-                                    if (Desktop.isDesktopSupported()) {
-                                        Desktop.getDesktop().browse(URI("https://github.com/cptodix/rimalux"))
-                                    }
-                                }
-                                showSupport = false
-                            }
-                        ) {
-                            Text(localizedStringOr("desktop_open_support", "Open GitHub"))
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 @Composable
@@ -281,9 +225,7 @@ private fun OptionsLeftPane(
     controller: StudioController,
     page: OptionsPage,
     onPageChange: (OptionsPage) -> Unit,
-    onDismiss: () -> Unit,
     onQuickDialog: (QuickDialog) -> Unit,
-    onShowSupport: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val patternsSummary = if (state.config.patternsRandomized) {
@@ -336,28 +278,17 @@ private fun OptionsLeftPane(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (page != OptionsPage.NONE) {
+        if (page != OptionsPage.NONE) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 IconButton(onClick = { onPageChange(OptionsPage.NONE) }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = localizedStringOr("desktop_collapse_page", "Collapse page")
                     )
                 }
-            }
-            Text(
-                text = localizedStringOr("desktop_options", "Options"),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = onDismiss) {
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = localizedStringOr("desktop_close_options", "Close options")
-                )
             }
         }
 
@@ -531,7 +462,7 @@ private fun OptionsLeftPane(
         AutoChangeSection(state = state, controller = controller)
 
         OptionsRow(
-            title = localizedStringOr("desktop_desktop_settings", "Desktop Settings"),
+            title = localizedStringOr("desktop_desktop_settings", "Advanced Settings"),
             summary = localizedStringOr(
                 "desktop_settings_subtitle",
                 "Desktop behavior, display output, and diagnostics"
@@ -544,43 +475,6 @@ private fun OptionsLeftPane(
                 )
             }
         )
-
-        Surface(
-            onClick = onShowSupport,
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            border = BorderStroke(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Favorite,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = localizedStringOr("btn_like_the_app", "Enjoying Rimalux?"),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 10.dp)
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
 
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -658,9 +552,17 @@ private fun OptionsRow(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                imageVector = if (selected) {
+                    Icons.Rounded.Check
+                } else {
+                    Icons.AutoMirrored.Rounded.KeyboardArrowRight
+                },
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 modifier = Modifier.size(20.dp)
             )
         }

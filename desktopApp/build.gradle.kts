@@ -23,6 +23,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.jna.platform)
+    implementation(libs.dbus.java.core)
+    implementation(libs.dbus.java.native.unixsocket)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -68,7 +70,10 @@ compose.desktop {
                 "java.naming",
                 "java.net.http",
                 "java.prefs",
+                "java.xml",
                 "jdk.crypto.ec",
+                "jdk.net",
+                "jdk.security.auth",
                 "jdk.unsupported"
             )
 

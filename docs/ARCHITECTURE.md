@@ -88,7 +88,8 @@ WallpaperSet metadata + history + settings JSON
 - `WindowsWallpaperBackend` — `IDesktopWallpaper` COM per-monitor apply with
   `SystemParametersInfoW` fallback.
 - `AutostartManager` — XDG autostart (Linux) and HKCU Run (Windows).
-- `DesktopTray` — AWT tray icon with left-click open and a three-item context menu.
+- `DesktopTray` — tray facade. `StatusNotifierTray` exports a native SNI item on Linux;
+  `AwtTray` is the Windows/fallback implementation. Both expose Open / Auto-Change / Quit.
 - `SingleInstanceManager` — file lock + localhost socket activation.
 - `DiagnosticsBundle` — support ZIP with system/settings/monitor/backend/log data.
 - `OsScheduler` — optional systemd user timer / Windows scheduled task.

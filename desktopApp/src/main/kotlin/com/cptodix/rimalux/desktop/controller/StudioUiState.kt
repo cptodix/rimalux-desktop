@@ -56,6 +56,7 @@ data class StudioUiState(
     val canGoForward: Boolean = false,
     val aheadReadyCount: Int = 0,
     val osSchedulerInstalled: Boolean = false,
+    val identifyMonitorId: String? = null,
     val previewError: String? = null
 ) {
     val selectedMonitor: MonitorInfo?
@@ -64,7 +65,7 @@ data class StudioUiState(
             ?: monitors.firstOrNull()
 
     val selectedRenderedItem: RenderedItem?
-        get() = current?.itemFor(selectedMonitorId)
+        get() = current?.items?.firstOrNull()
 }
 
 internal data class GeneratedItem(
@@ -79,5 +80,6 @@ internal enum class RegenerationMode {
 
 internal fun ApplyTarget.descriptionKey(): String = when (this) {
     ApplyTarget.ALL_DISPLAYS -> "desktop_apply_all_displays"
+    ApplyTarget.ALL_DISPLAYS_SEPARATE -> "desktop_apply_all_displays_separate"
     ApplyTarget.SELECTED_DISPLAY -> "desktop_apply_selected_display"
 }

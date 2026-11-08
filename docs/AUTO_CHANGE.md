@@ -59,6 +59,9 @@ Target displays are stored in `DisplaySettings.targetMonitorIds` (empty = all di
 
 ## Tray
 
+- Linux/KDE: native **StatusNotifierItem** over DBus (`StatusNotifierTray`). AWT’s XEmbed tray
+  icon appears on Plasma Wayland but does not receive click events, so it is only a fallback.
+- Windows: AWT `SystemTray` (`AwtTray`).
 - Left click: open/focus the Rimalux window.
 - Right-click context menu:
   1. Open Rimalux Desktop

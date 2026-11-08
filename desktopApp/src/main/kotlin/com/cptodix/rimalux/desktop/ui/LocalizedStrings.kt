@@ -17,7 +17,7 @@ fun localizedString(key: String, vararg args: Any): String {
         resource == null -> key
         args.isEmpty() -> stringResource(resource)
         else -> stringResource(resource, *args)
-    }
+    }.replace("%%", "%")
 }
 
 @Composable
@@ -27,7 +27,7 @@ fun localizedStringOr(key: String, fallback: String, vararg args: Any): String {
         resource == null -> fallback
         args.isEmpty() -> stringResource(resource)
         else -> stringResource(resource, *args)
-    }
+    }.replace("%%", "%")
 }
 
 @Composable

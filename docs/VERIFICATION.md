@@ -33,6 +33,7 @@
 | `AutoChangePolicyTest` | Pass — intervals, dedupe, due/next-run rules |
 | `AutostartManagerTest` | Pass — Linux XDG autostart entry |
 | `SingleInstanceManagerTest` | Pass — second instance notifies first |
+| `StatusNotifierTrayTest` | Pass — SNI install/register/Activate callback |
 | `StudioControllerAutoChangeTest` | Pass — fake clock/backend rotation |
 | `WindowsWallpaperBackendTest` | Pass — fit-mode mapping, index clamping, availability |
 | `UpdateCheckerTest` | Pass — dotted version comparison |
@@ -56,7 +57,7 @@ The headless render proof produced 1920×1080 PNGs with measured true black at 8
 | Per-monitor apply on multi-monitor hardware | Not tested — verification machine has one display |
 | Windows MSI/EXE | CI workflow added; not yet run on Windows hardware |
 | Auto-change / tray / start at login | Pass — auto-change and tray verified in normal use |
-| Tray left-click / right-click menu | Pass — left click opens; right click shows Open / Auto-Change / Quit |
+| Tray left-click / right-click menu | AWT path verified; native SNI path covered by `StatusNotifierTrayTest`, real KDE click verification pending |
 | Auto-change scheduler tests | Pass — policy, autostart, single instance, fake rotation |
 | Windows backend tests | Pass — pure mapping helpers; real COM apply pending Windows hardware |
 | Fullscreen / Identify / diagnostics / update check | Implemented; automated helper tests pass; UI verification pending |
@@ -73,8 +74,9 @@ app’s structure while adapting it to desktop. No new screenshots were taken, p
 ### Notes
 
 - The tray was reworked after user feedback: left click opens the window and right click shows
-  Open / Auto-Change / Quit. The user confirmed auto-change works; tray interaction was verified
-  in normal use after the rework.
+  Open / Auto-Change / Quit. The original AWT path did not receive Plasma Wayland clicks, so
+  Linux now exports a native StatusNotifierItem over DBus. A background launch verified that
+  `Activate` shows the window and `ContextMenu` invokes the Swing menu callback.
 - No GUI launch or screenshot was performed by the agent for the tray rework or Phase 3/4
   changes, per `RULES.md`. `--test-backend`, `--diagnostics-bundle`, and `--check-updates` were
   exercised headlessly.

@@ -1,5 +1,26 @@
 package com.cptodix.rimalux.desktop.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
+import com.cptodix.rimalux.desktop.model.DisplaySettings
+import com.cptodix.rimalux.desktop.model.MonitorInfo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,9 +36,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -60,8 +78,8 @@ fun SettingsScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         ScreenHeader(
-            title = localizedStringOr("desktop_settings_title", "Settings"),
-            subtitle = localizedStringOr("desktop_settings_subtitle", "Desktop behavior, display output, and diagnostics"
+            title = localizedStringOr("desktop_settings_title", "Advanced Settings"),
+            subtitle = localizedStringOr("desktop_settings_subtitle", "Advanced desktop behavior, display output, and diagnostics"
             )
         )
 
@@ -81,7 +99,18 @@ fun SettingsScreen(
                         FilterChip(
                             selected = state.languageTag == language.languageTag,
                             onClick = { controller.setLanguage(language) },
-                            label = { Text(language.nativeName) }
+                            label = { Text(language.nativeName) },
+                            leadingIcon = if (state.languageTag == language.languageTag) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else {
+                                null
+                            }
                         )
                     }
                 }
@@ -91,22 +120,76 @@ fun SettingsScreen(
                 title = localizedStringOr("desktop_resolution", "Wallpaper Resolution"),
                 modifier = Modifier.widthIn(max = 920.dp)
             ) {
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    ResolutionMode.entries.forEachIndexed { index, mode ->
-                        SegmentedButton(
-                            selected = state.display.resolutionMode == mode,
-                            onClick = { controller.setResolutionMode(mode) },
-                            shape = SegmentedButtonDefaults.itemShape(index, ResolutionMode.entries.size)
+                var resolutionMenu by remember { mutableStateOf(false) }
+                val monitor = state.selectedMonitor
+                Box {
+                    Surface(
+                        onClick = { resolutionMenu = true },
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        border = BorderStroke(
+                            0.5.dp,
+                            MaterialTheme.colorScheme.outlineVariant
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = when (mode) {
-                                    ResolutionMode.AUTO -> localizedStringOr("desktop_resolution_auto", "Auto")
-                                    ResolutionMode.P1080 -> "1920"
-                                    ResolutionMode.P1440 -> "2560"
-                                    ResolutionMode.P2160 -> "3840"
-                                    ResolutionMode.CUSTOM -> localizedStringOr("desktop_resolution_custom", "Custom")
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = resolutionModeName(state.display.resolutionMode),
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                Text(
+                                    text = resolutionLabelFor(
+                                        state.display.resolutionMode,
+                                        monitor,
+                                        state.display
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowDropDown,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = resolutionMenu,
+                        onDismissRequest = { resolutionMenu = false }
+                    ) {
+                        ResolutionMode.entries.forEach { mode ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(resolutionModeName(mode))
+                                        Text(
+                                            text = resolutionLabelFor(mode, monitor, state.display),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 },
-                                maxLines = 1
+                                leadingIcon = if (state.display.resolutionMode == mode) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
+                                onClick = {
+                                    controller.setResolutionMode(mode)
+                                    resolutionMenu = false
+                                }
                             )
                         }
                     }
@@ -144,7 +227,7 @@ fun SettingsScreen(
                 Text(
                     text = localizedStringOr(
                         "desktop_resolution_hint",
-                        "Auto uses the display's physical resolution. Presets use the long edge."
+                        "Auto Match uses each display's reported resolution. Presets use the long edge."
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -169,6 +252,17 @@ fun SettingsScreen(
                                         FitMode.TILE -> localizedStringOr("desktop_fit_tile", "Tile")
                                     }
                                 )
+                            },
+                            leadingIcon = if (state.display.fitMode == mode) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else {
+                                null
                             }
                         )
                     }
@@ -233,7 +327,18 @@ fun SettingsScreen(
                         FilterChip(
                             selected = state.ui.backendOverride == id,
                             onClick = { controller.setBackendOverride(id) },
-                            label = { Text(label) }
+                            label = { Text(label) },
+                            leadingIcon = if (state.ui.backendOverride == id) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else {
+                                null
+                            }
                         )
                     }
                 }
@@ -279,21 +384,81 @@ fun SettingsScreen(
             }
 
             SectionCard(
+                title = localizedStringOr("desktop_displays", "Displays"),
+                modifier = Modifier.widthIn(max = 920.dp)
+            ) {
+                state.monitors.forEach { monitor ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = monitor.name,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                text = "${monitor.widthPx}×${monitor.heightPx}" +
+                                    if (monitor.isPrimary) {
+                                        " · " + localizedStringOr("desktop_primary", "Primary")
+                                    } else {
+                                        ""
+                                    },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { controller.identifyMonitor(monitor.id) },
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.heightIn(min = 48.dp)
+                        ) {
+                            Text(localizedStringOr("desktop_identify_display", "Identify"))
+                        }
+                    }
+                }
+                Text(
+                    text = localizedStringOr(
+                        "desktop_displays_hint",
+                        "Identify shows the display name and resolution over the preview."
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            SectionCard(
                 title = localizedStringOr("desktop_folders", "Folders"),
                 modifier = Modifier.widthIn(max = 920.dp)
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = controller::openConfigFolder) {
-                        Text(localizedStringOr("desktop_open_config", "Open Config Folder"))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FolderShortcutButton(
+                            label = localizedStringOr("desktop_open_config", "Open Config Folder"),
+                            icon = Icons.Rounded.Settings,
+                            onClick = controller::openConfigFolder,
+                            modifier = Modifier.weight(1f)
+                        )
+                        FolderShortcutButton(
+                            label = localizedStringOr("desktop_open_cache", "Open Cache Folder"),
+                            icon = Icons.Rounded.Folder,
+                            onClick = controller::openCacheFolder,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                    OutlinedButton(onClick = controller::openCacheFolder) {
-                        Text(localizedStringOr("desktop_open_cache", "Open Cache Folder"))
-                    }
-                    OutlinedButton(onClick = controller::openPicturesFolder) {
-                        Text(localizedStringOr("desktop_open_pictures", "Open Pictures Folder"))
-                    }
-                    OutlinedButton(onClick = controller::openLogsFolder) {
-                        Text(localizedStringOr("desktop_open_logs", "Open Logs"))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FolderShortcutButton(
+                            label = localizedStringOr("desktop_open_pictures", "Open Pictures Folder"),
+                            icon = Icons.Rounded.Image,
+                            onClick = controller::openPicturesFolder,
+                            modifier = Modifier.weight(1f)
+                        )
+                        FolderShortcutButton(
+                            label = localizedStringOr("desktop_open_logs", "Open Logs"),
+                            icon = Icons.Rounded.Description,
+                            onClick = controller::openLogsFolder,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -412,5 +577,72 @@ fun SettingsScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun resolutionModeName(mode: ResolutionMode): String = when (mode) {
+    ResolutionMode.AUTO -> localizedStringOr("desktop_resolution_auto_match", "Auto Match")
+    ResolutionMode.P1080 -> "1920"
+    ResolutionMode.P1440 -> "2560"
+    ResolutionMode.P2160 -> "3840"
+    ResolutionMode.CUSTOM -> localizedStringOr("desktop_resolution_custom", "Custom")
+}
+
+private fun resolutionLabelFor(
+    mode: ResolutionMode,
+    monitor: MonitorInfo?,
+    display: DisplaySettings
+): String {
+    val (width, height) = when (mode) {
+        ResolutionMode.AUTO -> {
+            if (monitor == null || monitor.widthPx <= 0 || monitor.heightPx <= 0) {
+                3840 to 2160
+            } else {
+                monitor.widthPx to monitor.heightPx
+            }
+        }
+        ResolutionMode.P1080 -> presetResolution(monitor, 1920)
+        ResolutionMode.P1440 -> presetResolution(monitor, 2560)
+        ResolutionMode.P2160 -> presetResolution(monitor, 3840)
+        ResolutionMode.CUSTOM -> display.customWidth to display.customHeight
+    }
+    return "$width×$height"
+}
+
+private fun presetResolution(monitor: MonitorInfo?, longEdge: Int): Pair<Int, Int> {
+    val aspect = monitor?.aspectRatio ?: (9f / 16f)
+    return if (aspect <= 1f) {
+        longEdge to (longEdge * aspect).roundToInt().coerceAtLeast(240)
+    } else {
+        (longEdge / aspect).roundToInt().coerceAtLeast(320) to longEdge
+    }
+}
+
+@Composable
+private fun FolderShortcutButton(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        modifier = modifier.heightIn(min = 48.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 8.dp)
+        )
     }
 }

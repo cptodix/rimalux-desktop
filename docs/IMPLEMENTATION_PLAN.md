@@ -126,6 +126,13 @@ This is the working checklist for AI agents and contributors. Keep statuses curr
 - [x] Diagnostics bundle
 - [x] systemd/Task Scheduler mode
 - [x] Update checker
+- [x] Native Linux StatusNotifierItem tray
+- [x] Options modal floats above controls, animates from the bottom, no title/close
+- [x] Apply To popup: per-display / All Displays / All Displays Separate
+- [x] Display-agnostic preview (no display selector or layout icons)
+- [x] Auto Match native resolution with 4K fallback
+- [x] Advanced Settings rename, resolution popup, folder grid, display identify
+- [x] Remove “Enjoying Rimalux?” card
 - [ ] Signing (needs release certificate/secrets)
 - [x] Release workflow
 

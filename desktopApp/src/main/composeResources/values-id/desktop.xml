@@ -53,9 +53,19 @@
     <string name="desktop_previous_wallpaper">Wallpaper sebelumnya</string>
     <string name="desktop_next_wallpaper">Wallpaper berikutnya</string>
     <string name="desktop_phase2_badge">Fase 2</string>
-    <string name="desktop_desktop_settings">Pengaturan Desktop</string>
+    <string name="desktop_desktop_settings">Pengaturan Lanjutan</string>
     <string name="desktop_auto_change_phase2">Auto-change hadir di Fase 2.</string>
     <string name="desktop_all_displays">Semua Layar</string>
+    <string name="desktop_apply_to">Terapkan Ke</string>
+    <string name="desktop_apply_all_desc">Wallpaper sama di setiap layar</string>
+    <string name="desktop_apply_all_displays">Terapkan ke Semua Layar</string>
+    <string name="desktop_apply_all_displays_separate">Terapkan ke Semua Layar Terpisah</string>
+    <string name="desktop_apply_all_separate">Semua Layar Terpisah</string>
+    <string name="desktop_apply_all_separate_desc">Wallpaper berbeda di setiap layar</string>
+    <string name="desktop_apply_all_separate_unsupported">Backend ini menerapkan satu wallpaper ke semua layar</string>
+    <string name="desktop_displays">Layar</string>
+    <string name="desktop_displays_hint">Identifikasi menampilkan nama dan resolusi layar di atas pratinjau.</string>
+    <string name="desktop_resolution_auto_match">Cocok Otomatis</string>
     <string name="desktop_auto_next">Perubahan berikutnya: %1$s</string>
     <string name="desktop_auto_last">Perubahan terakhir: %1$s</string>
     <string name="desktop_auto_never">Belum</string>
@@ -84,7 +94,7 @@
     <string name="desktop_display_layout_hint">Pilih layar untuk pratinjau. Wallpaper per-layar bergantung pada lingkungan desktop Anda.</string>
     <string name="desktop_display_count">%1$d layar</string>
     <string name="desktop_folders">Folder</string>
-    <string name="desktop_resolution_hint">Otomatis memakai resolusi fisik layar. Preset memakai sisi panjang.</string>
+    <string name="desktop_resolution_hint">Cocok Otomatis memakai resolusi yang dilaporkan tiap layar. Preset memakai sisi panjang.</string>
 
     <!-- Studio -->
     <string name="desktop_studio_title">Studio Rimalux</string>
@@ -169,11 +179,11 @@
     <string name="desktop_select_color">Pilih warna %1$d</string>
 
     <!-- Settings -->
-    <string name="desktop_settings_title">Pengaturan</string>
-    <string name="desktop_settings_subtitle">Perilaku desktop, keluaran layar, dan diagnostik</string>
+    <string name="desktop_settings_title">Pengaturan Lanjutan</string>
+    <string name="desktop_settings_subtitle">Perilaku desktop lanjutan, keluaran layar, dan diagnostik</string>
     <string name="desktop_language">Bahasa</string>
     <string name="desktop_resolution">Resolusi Wallpaper</string>
-    <string name="desktop_resolution_auto">Otomatis (sesuai layar)</string>
+    <string name="desktop_resolution_auto">Cocok Otomatis</string>
     <string name="desktop_resolution_1080">Sisi panjang 1920</string>
     <string name="desktop_resolution_1440">Sisi panjang 2560</string>
     <string name="desktop_resolution_4k">Sisi panjang 3840</string>

@@ -105,16 +105,18 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
    - The UI must reflect the original Android app, adapted for desktop — not a generic
      desktop dashboard.
    - No menu bar, no side navigation rail, no phone mockups.
-   - The wallpaper preview fills the entire window.
-   - Bottom media-player controls: options (left), previous / apply / save / next (center),
-     display selector + layout (right).
+   - The wallpaper preview fills the entire window and is **not tied to a selected display**.
+   - Bottom media-player controls: options (left), previous / apply / save / next (center).
+   - Apply opens a compact popup above the button with each display, **All Displays** (same
+     design on every display), and **All Displays Separate** (a distinct design per display).
    - A small floating pill above the bottom controls shows the pattern name, palette dots,
      and measured True Black percentage.
-   - The options button opens a modal styled like the Android settings sheet. Selecting
-     Patterns or Colors expands the modal to the right like a tablet; the left sheet remains
-     visible.
-   - Settings is a row in the options list above “Enjoying Rimalux?” and opens in the expanded
-     right pane.
+   - The options button opens a modal styled like the Android settings sheet. The modal floats
+     above the bottom controls and animates in/out from the bottom. Selecting Patterns or
+     Colors expands the modal to the right like a tablet; the left sheet remains visible.
+   - The options modal has no title row and no close button; dismiss via scrim, `Esc`, or the
+     active row. A back arrow appears only for an expanded page.
+   - Advanced Settings is a row in the options list and opens in the expanded right pane.
    - Patterns and Colors panes must match the Android options/behavior: mode segmented controls,
      category filters only in custom mode, select all/none, current-pattern highlight, palette
      removal, and no extra search/fill controls.
@@ -130,7 +132,9 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
    - Call procedural designs **Patterns**.
    - Call the palette page **Colors**.
    - Call `#000000` coverage **True Black Ratio**.
-   - Use **Apply to Desktop** / **Apply to All Displays**, not Android Home/Lock targets.
+   - Use **Apply to Desktop** / **All Displays** / **All Displays Separate**, not Android
+     Home/Lock targets.
+   - Call the settings pane **Advanced Settings**.
    - Do not promise lock-screen wallpaper support on Windows.
 
 4. **Interaction**
@@ -141,6 +145,8 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
      runs out, generate on demand and show progress.
    - Show progress for synthesis, apply, and export.
    - Use a snackbar/status line, not blocking dialogs for routine status.
+   - **Auto Match** resolution generates each display at its reported native resolution; use
+     3840×2160 as the fallback when detection fails.
 
 5. **Localization**
    - English and Bahasa Indonesia are first-class.
@@ -179,6 +185,8 @@ See [`docs/LINUX_WALLPAPER_BACKENDS.md`](docs/LINUX_WALLPAPER_BACKENDS.md) and
 ## 7. Auto-change rules
 
 - Auto-change runs in a tray-resident app, or via an optional OS scheduler.
+- Linux/KDE tray uses a native `StatusNotifierItem` over DBus; AWT `SystemTray` is the
+  Windows/fallback path. Do not revert to Compose `Tray` or AWT-only on Linux.
 - `nextRunEpochMillis` and `lastRunEpochMillis` are persisted in settings.
 - Enforce a dedupe window of `max(30s, interval * 3/4)` so startup + timer + wake do not double-rotate.
 - On startup/wake, if `nextRun` is overdue, rotate once and then schedule the next interval.

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -525,5 +526,36 @@ fun BackendBadge(state: StudioUiState, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+fun DisplayIdentifyOverlay(monitor: MonitorInfo) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.72f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = monitor.name,
+                style = MaterialTheme.typography.displaySmall,
+                color = Color.White
+            )
+            Text(
+                text = "${monitor.widthPx}×${monitor.heightPx}" +
+                    if (monitor.isPrimary) {
+                        " · " + localizedStringOr("desktop_primary", "Primary")
+                    } else {
+                        ""
+                    },
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White.copy(alpha = 0.75f)
+            )
+        }
     }
 }

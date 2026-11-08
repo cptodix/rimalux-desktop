@@ -68,6 +68,11 @@
 - [x] Diagnostics bundle (`--diagnostics-bundle`, Settings → Support)
 - [x] Optional systemd user timer / Windows Task Scheduler
 - [x] Update checker (`--check-updates`, Settings → Support)
+- [x] Native Linux StatusNotifierItem tray
+- [x] Options modal floats/animates above the media controls
+- [x] Apply To popup with per-display / All Displays / All Displays Separate
+- [x] Display-agnostic preview and Auto Match native resolution (4K fallback)
+- [x] Advanced Settings rename, resolution popup, folder grid, identify
 - [x] CI build + tag-driven release automation
 - [ ] Signed installers (needs release certificate/secrets)
 - [ ] Update checker download/install flow

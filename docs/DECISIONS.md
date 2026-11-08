@@ -105,14 +105,15 @@ bounded.
 **Why:** It is the supported Plasma scripting API and works on Wayland. `desktop.screen` may
 require a mapping/reorder UI, planned for Phase 2.
 
-## ADR-014 — AWT tray instead of Compose `Tray`
+## ADR-014 — Native StatusNotifierItem on Linux, AWT tray on Windows
 
-**Decision:** Implement `DesktopTray` directly with `java.awt.SystemTray`.
+**Decision:** `DesktopTray` prefers a native `org.kde.StatusNotifierItem` exported over DBus on
+Linux and falls back to AWT `SystemTray` on Windows or when no SNI watcher is available.
 
-**Why:** The desktop contract needs a deterministic left-click action (open the window) and a
-three-item right-click menu. AWT gives direct access to `MouseListener`, `PopupMenu`, and
-`CheckboxMenuItem`, while Compose `Tray` hides the underlying `TrayIcon` and platform click
-semantics vary.
+**Why:** On KDE Plasma Wayland, AWT’s XEmbed tray icon appears through `xembedsniproxy`, but
+Plasma’s `Activate`/`ContextMenu` SNI calls are not delivered to the AWT icon, so clicks do
+nothing. Exporting SNI directly gives Plasma real callbacks for open and the context menu.
+`dbus-java` provides the DBus connection, property annotations, and exported-object support.
 
 ## ADR-015 — Windows per-monitor via `IDesktopWallpaper`
 

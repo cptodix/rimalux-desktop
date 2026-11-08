@@ -10,12 +10,19 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.SwingUtilities
 
+interface TrayBackend {
+    val isInstalled: Boolean
+    fun install(labels: TrayLabels, autoChangeEnabled: Boolean): Boolean
+    fun update(labels: TrayLabels, autoChangeEnabled: Boolean)
+    fun remove()
+}
+
 /**
- * Native tray integration.
+ * Tray facade.
  *
- * Left click opens the studio window. Right click opens a compact menu with exactly the
- * desktop-level actions: open, toggle auto-change, and quit. The menu is rebuilt whenever the
- * auto-change state or the language changes.
+ * On Linux, prefers a native StatusNotifierItem because KDE Plasma Wayland does not forward
+ * tray clicks to AWT's XEmbed tray icon. Falls back to AWT `SystemTray` on Windows and on Linux
+ * desktops without a StatusNotifierWatcher.
  */
 class DesktopTray(
     private val image: Image,
@@ -23,6 +30,53 @@ class DesktopTray(
     private val onToggleAutoChange: () -> Unit,
     private val onQuit: () -> Unit
 ) {
+    private var backend: TrayBackend? = null
+
+    val isInstalled: Boolean
+        get() = backend?.isInstalled == true
+
+    fun install(labels: TrayLabels, autoChangeEnabled: Boolean): Boolean {
+        backend?.let { existing ->
+            existing.update(labels, autoChangeEnabled)
+            return existing.isInstalled
+        }
+
+        val osName = System.getProperty("os.name").orEmpty().lowercase()
+        if (osName.contains("linux") && System.getenv("DBUS_SESSION_BUS_ADDRESS") != null) {
+            val sni = StatusNotifierTray(onOpen, onToggleAutoChange, onQuit)
+            if (sni.install(labels, autoChangeEnabled)) {
+                backend = sni
+                return true
+            }
+        }
+
+        val awt = AwtTray(image, onOpen, onToggleAutoChange, onQuit)
+        if (awt.install(labels, autoChangeEnabled)) {
+            backend = awt
+            return true
+        }
+        return false
+    }
+
+    fun update(labels: TrayLabels, autoChangeEnabled: Boolean) {
+        backend?.update(labels, autoChangeEnabled)
+    }
+
+    fun remove() {
+        backend?.remove()
+        backend = null
+    }
+}
+
+/**
+ * AWT tray fallback. Left click opens the studio; right click opens the compact menu.
+ */
+internal class AwtTray(
+    private val image: Image,
+    private val onOpen: () -> Unit,
+    private val onToggleAutoChange: () -> Unit,
+    private val onQuit: () -> Unit
+) : TrayBackend {
     private var trayIcon: TrayIcon? = null
     private var popup: PopupMenu? = null
     private var openItem: MenuItem? = null
@@ -30,10 +84,10 @@ class DesktopTray(
     private var quitItem: MenuItem? = null
     private var lastKnownAutoState: Boolean = false
 
-    var isInstalled: Boolean = false
+    override var isInstalled: Boolean = false
         private set
 
-    fun install(labels: TrayLabels, autoChangeEnabled: Boolean): Boolean {
+    override fun install(labels: TrayLabels, autoChangeEnabled: Boolean): Boolean {
         if (isInstalled) {
             update(labels, autoChangeEnabled)
             return true
@@ -78,12 +132,12 @@ class DesktopTray(
             isInstalled = true
             true
         }.onFailure { error ->
-            AppLog.warning("Could not install tray icon", error)
+            AppLog.warning("Could not install AWT tray icon", error)
             remove()
         }.getOrDefault(false)
     }
 
-    fun update(labels: TrayLabels, autoChangeEnabled: Boolean) {
+    override fun update(labels: TrayLabels, autoChangeEnabled: Boolean) {
         openItem?.label = labels.open
         autoItem?.apply {
             label = labels.autoChange
@@ -94,7 +148,7 @@ class DesktopTray(
         trayIcon?.setToolTip(labels.tooltip)
     }
 
-    fun remove() {
+    override fun remove() {
         runCatching { trayIcon?.let { SystemTray.getSystemTray().remove(it) } }
         trayIcon = null
         popup = null

@@ -53,9 +53,19 @@
     <string name="desktop_previous_wallpaper">Previous wallpaper</string>
     <string name="desktop_next_wallpaper">Next wallpaper</string>
     <string name="desktop_phase2_badge">Phase 2</string>
-    <string name="desktop_desktop_settings">Desktop Settings</string>
+    <string name="desktop_desktop_settings">Advanced Settings</string>
     <string name="desktop_auto_change_phase2">Auto-Change arrives in Phase 2.</string>
     <string name="desktop_all_displays">All Displays</string>
+    <string name="desktop_apply_to">Apply To</string>
+    <string name="desktop_apply_all_desc">Same wallpaper on every display</string>
+    <string name="desktop_apply_all_displays">Apply to All Displays</string>
+    <string name="desktop_apply_all_displays_separate">Apply to All Displays Separate</string>
+    <string name="desktop_apply_all_separate">All Displays Separate</string>
+    <string name="desktop_apply_all_separate_desc">A different wallpaper on each display</string>
+    <string name="desktop_apply_all_separate_unsupported">This backend applies one wallpaper to all displays</string>
+    <string name="desktop_displays">Displays</string>
+    <string name="desktop_displays_hint">Identify shows the display name and resolution over the preview.</string>
+    <string name="desktop_resolution_auto_match">Auto Match</string>
     <string name="desktop_auto_next">Next change: %1$s</string>
     <string name="desktop_auto_last">Last change: %1$s</string>
     <string name="desktop_auto_never">Not yet</string>
@@ -84,7 +94,7 @@
     <string name="desktop_display_layout_hint">Choose a display to preview. Per-display wallpapers depend on your desktop environment.</string>
     <string name="desktop_display_count">%1$d display(s)</string>
     <string name="desktop_folders">Folders</string>
-    <string name="desktop_resolution_hint">Auto uses the display’s physical resolution. Presets use the long edge.</string>
+    <string name="desktop_resolution_hint">Auto Match uses each display’s reported resolution. Presets use the long edge.</string>
 
     <!-- Studio -->
     <string name="desktop_studio_title">Rimalux Studio</string>
@@ -169,11 +179,11 @@
     <string name="desktop_select_color">Select color %1$d</string>
 
     <!-- Settings -->
-    <string name="desktop_settings_title">Settings</string>
-    <string name="desktop_settings_subtitle">Desktop behavior, display output, and diagnostics</string>
+    <string name="desktop_settings_title">Advanced Settings</string>
+    <string name="desktop_settings_subtitle">Advanced desktop behavior, display output, and diagnostics</string>
     <string name="desktop_language">Language</string>
     <string name="desktop_resolution">Wallpaper Resolution</string>
-    <string name="desktop_resolution_auto">Auto (match display)</string>
+    <string name="desktop_resolution_auto">Auto Match</string>
     <string name="desktop_resolution_1080">1920 long edge</string>
     <string name="desktop_resolution_1440">2560 long edge</string>
     <string name="desktop_resolution_4k">3840 long edge</string>

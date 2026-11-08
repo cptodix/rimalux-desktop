@@ -54,6 +54,10 @@ Run all:
 - **`SingleInstanceManagerTest`**
   - First instance acquires the lock; second instance fails and notifies the first.
 
+- **`StatusNotifierTrayTest`**
+  - On a session bus, installs the SNI tray, registers it with
+    `org.kde.StatusNotifierWatcher`, and verifies that `Activate` invokes the open callback.
+
 - **`StudioControllerAutoChangeTest`**
   - Fake clock + fake backend; due rotation generates and applies a new set and advances
     last/next run timestamps.
@@ -102,7 +106,8 @@ accepted by the user on 2026-11-07.
 3. [ ] Set Apply To to specific displays; verify only those change (single display available).
 4. [ ] Start at Login creates `~/.config/autostart/rimalux.desktop` (installed build).
 5. [x] Close window with Auto-Change on; verify it hides to tray and keeps running.
-6. [x] Tray icon left-click opens Rimalux; right-click menu shows Open / Auto-Change / Quit.
+6. [x] AWT tray left-click/right-click behavior (Windows/fallback).
+6b. [ ] Native SNI tray left-click/right-click on KDE Wayland.
 7. [ ] Run `--rotate-now`; verify one wallpaper change.
 8. [ ] Launch a second instance; verify it focuses the first.
 9. [x] Wait for one interval; verify automatic change.
@@ -111,6 +116,12 @@ accepted by the user on 2026-11-07.
 ### Phase 3/4 manual checklist
 
 1. [ ] Fullscreen preview via F11 / double-click, exit with Esc (implemented).
+2. [ ] Options modal floats above the media controls, animates from the bottom, and has no
+       title/close row.
+3. [ ] Apply popup: per-display, All Displays, and All Displays Separate.
+4. [ ] Preview stays display-agnostic; no display selector/layout icons.
+5. [ ] Advanced Settings: resolution popup shows `W×H`, folder grid is usable.
+6. [ ] Auto Match uses native resolutions; 4K fallback when detection fails.
 2. [ ] Display Identify overlay from Display Layout (implemented).
 3. [x] Diagnostics bundle export and redaction (`DiagnosticsBundleTest`).
 4. [x] Update-check version comparison (`UpdateCheckerTest`).

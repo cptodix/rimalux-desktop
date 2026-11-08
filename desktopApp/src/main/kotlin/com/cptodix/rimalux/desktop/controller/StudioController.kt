@@ -767,6 +767,59 @@ class StudioController(
         return renderGenerated(generated, setId, timestamp, wasAutoScheduled = false)
     }
 
+    private fun sameDesignItems(
+        monitors: List<MonitorInfo>,
+        primary: WallpaperItem,
+        display: DisplaySettings
+    ): List<WallpaperItem> = monitors.mapIndexed { index, monitor ->
+        sameDesignItem(monitor, index, primary, display)
+    }
+
+    private fun sameDesignItem(
+        monitor: MonitorInfo,
+        index: Int,
+        primary: WallpaperItem,
+        display: DisplaySettings
+    ): WallpaperItem {
+        val (width, height) = resolveSize(monitor, display)
+        val screenIndex = display.plasmaScreenIndexById[monitor.id]
+            ?: monitor.plasmaScreenIndex
+            ?: index
+        return primary.copy(
+            monitorId = monitor.id,
+            monitorName = monitor.name,
+            screenIndex = screenIndex,
+            widthPx = width,
+            heightPx = height,
+            measuredBlackPercent = null
+        )
+    }
+
+    private suspend fun separateDesignItems(state: StudioUiState): List<WallpaperItem> {
+        val spec = state.config.toCoreSpec()
+        val palettes = state.userPalettes
+        val usedSeeds = HashSet<Long>()
+        val usedPatterns = ArrayList<ArtPattern>()
+        val usedColors = ArrayList<List<Long>>()
+        val items = ArrayList<WallpaperItem>(state.monitors.size)
+        for ((index, monitor) in state.monitors.withIndex()) {
+            val seed = newSeed(usedSeeds).also { usedSeeds += it }
+            val (width, height) = resolveSize(monitor, state.display)
+            val synth = WallpaperGeneratorEngine.synthesize(
+                seed = seed,
+                spec = spec,
+                availablePalettes = palettes,
+                aspectRatio = height.toFloat() / width.toFloat(),
+                excludePattern = usedPatterns.lastOrNull(),
+                excludeColors = usedColors.lastOrNull()
+            )
+            usedPatterns += synth.pattern
+            usedColors += synth.paletteColors
+            items += buildItem(monitor, index, synth, width, height, state.display)
+        }
+        return items
+    }
+
     private fun regeneratePreserving(
         debounceMs: Long = 0,
         colorsOverride: Map<String, List<Long>>? = null
@@ -1237,6 +1290,14 @@ class StudioController(
         _uiState.update { it.copy(backendInfo = backend.info) }
     }
 
+    fun identifyMonitor(monitorId: String?) {
+        _uiState.update { it.copy(identifyMonitorId = monitorId) }
+    }
+
+    fun clearIdentify() {
+        _uiState.update { it.copy(identifyMonitorId = null) }
+    }
+
     private fun scheduleUiPersist(transform: (DesktopSettings) -> DesktopSettings) {
         uiPersistJob?.cancel()
         uiPersistJob = scope.launch {
@@ -1249,25 +1310,50 @@ class StudioController(
     // Apply / export
     // ---------------------------------------------------------------------
 
-    fun applyWallpaper(target: ApplyTarget) {
+    fun applyWallpaper(target: ApplyTarget, monitorId: String? = null) {
         scope.launch {
             applyMutex.withLock {
                 val state = _uiState.value
                 val current = state.current
-                if (current == null) {
+                val primary = current?.set?.items?.firstOrNull()
+                if (current == null || primary == null) {
                     postStatus(UiMessage("desktop_error_no_wallpaper"))
                     return@withLock
                 }
+
                 val targetItems = when (target) {
-                    ApplyTarget.ALL_DISPLAYS -> current.set.items
-                    ApplyTarget.SELECTED_DISPLAY -> current.set.items.filter {
-                        it.monitorId == state.selectedMonitorId
-                    }.ifEmpty { current.set.items.take(1) }
+                    ApplyTarget.ALL_DISPLAYS -> sameDesignItems(
+                        monitors = state.monitors,
+                        primary = primary,
+                        display = state.display
+                    )
+
+                    ApplyTarget.ALL_DISPLAYS_SEPARATE -> {
+                        if (state.monitors.size <= 1) {
+                            listOf(primary)
+                        } else {
+                            separateDesignItems(state)
+                        }
+                    }
+
+                    ApplyTarget.SELECTED_DISPLAY -> {
+                        val selectedId = monitorId ?: state.selectedMonitorId
+                        val monitor = state.monitors.firstOrNull { it.id == selectedId }
+                            ?: state.selectedMonitor
+                            ?: state.monitors.firstOrNull()
+                        if (monitor == null) {
+                            listOf(primary)
+                        } else {
+                            val index = state.monitors.indexOf(monitor).coerceAtLeast(0)
+                            listOf(sameDesignItem(monitor, index, primary, state.display))
+                        }
+                    }
                 }
                 if (targetItems.isEmpty()) {
                     postStatus(UiMessage("desktop_error_no_wallpaper"))
                     return@withLock
                 }
+
                 _uiState.update { it.copy(isApplying = true) }
                 try {
                     val files = withContext(Dispatchers.Default) {
@@ -1275,25 +1361,7 @@ class StudioController(
                     }
                     val result = backend.apply(files, state.display.fitMode)
                     if (result.success) {
-                        val measured = files.associate { it.item.monitorId to it.measuredBlackPercent }
-                        val updatedItems = current.set.items.map { item ->
-                            measured[item.monitorId]?.let { item.copy(measuredBlackPercent = it) } ?: item
-                        }
-                        val updatedRendered = current.items.map { rendered ->
-                            measured[rendered.item.monitorId]?.let {
-                                rendered.copy(
-                                    item = rendered.item.copy(measuredBlackPercent = it),
-                                    measuredBlackPercent = it
-                                )
-                            } ?: rendered
-                        }
-                        val updatedSet = current.set.copy(items = updatedItems)
-                        _uiState.update {
-                            it.copy(
-                                current = RenderedSet(updatedSet, updatedRendered),
-                                isApplying = false
-                            )
-                        }
+                        val updatePreview = target != ApplyTarget.ALL_DISPLAYS_SEPARATE
                         val auto = if (state.autoChange.enabled) {
                             state.autoChange.copy(
                                 lastRunEpochMillis = clock(),
@@ -1306,24 +1374,50 @@ class StudioController(
                         } else {
                             state.autoChange
                         }
-                        _uiState.update { it.copy(autoChange = auto) }
-                        store.update {
-                            it.copy(
-                                currentSet = updatedSet,
-                                autoChange = auto
+
+                        if (updatePreview) {
+                            val measured = files.associate { it.item.monitorId to it.measuredBlackPercent }
+                            val updatedItems = current.set.items.map { item ->
+                                measured[item.monitorId]?.let {
+                                    item.copy(measuredBlackPercent = it)
+                                } ?: item
+                            }
+                            val updatedRendered = current.items.map { rendered ->
+                                measured[rendered.item.monitorId]?.let {
+                                    rendered.copy(
+                                        item = rendered.item.copy(measuredBlackPercent = it),
+                                        measuredBlackPercent = it
+                                    )
+                                } ?: rendered
+                            }
+                            val updatedSet = current.set.copy(items = updatedItems)
+                            _uiState.update {
+                                it.copy(
+                                    current = RenderedSet(updatedSet, updatedRendered),
+                                    isApplying = false,
+                                    autoChange = auto
+                                )
+                            }
+                            store.update {
+                                it.copy(currentSet = updatedSet, autoChange = auto)
+                            }
+                            fileStore.cleanup(
+                                keepSetIds = (
+                                    listOf(updatedSet.id) + past.take(3).map { set -> set.id }
+                                    ).toSet()
                             )
-                        }
-                        fileStore.cleanup(
-                            keepSetIds = (
-                                listOf(updatedSet.id) +
-                                    past.take(3).map { set -> set.id }
-                                ).toSet()
-                        )
-                        val average = files.map { it.measuredBlackPercent }.average().roundToInt()
-                        val targetName = if (target == ApplyTarget.SELECTED_DISPLAY) {
-                            state.selectedMonitor?.name ?: "Desktop"
                         } else {
-                            "${files.size} display(s)"
+                            // "All Displays Separate" must not change the preview/current set.
+                            _uiState.update { it.copy(isApplying = false, autoChange = auto) }
+                            store.update { it.copy(autoChange = auto) }
+                        }
+
+                        val average = files.map { it.measuredBlackPercent }.average().roundToInt()
+                        val targetName = when (target) {
+                            ApplyTarget.ALL_DISPLAYS -> "All Displays"
+                            ApplyTarget.ALL_DISPLAYS_SEPARATE -> "All Displays Separate"
+                            ApplyTarget.SELECTED_DISPLAY ->
+                                targetItems.firstOrNull()?.monitorName ?: "Desktop"
                         }
                         postStatus(
                             UiMessage(
@@ -1367,6 +1461,7 @@ class StudioController(
             }
             val targetItems = when (target) {
                 ApplyTarget.ALL_DISPLAYS -> current.set.items
+                ApplyTarget.ALL_DISPLAYS_SEPARATE -> current.set.items
                 ApplyTarget.SELECTED_DISPLAY -> current.set.items.filter {
                     it.monitorId == state.selectedMonitorId
                 }.ifEmpty { current.set.items.take(1) }
@@ -1500,7 +1595,11 @@ class StudioController(
 
     private fun resolveSize(monitor: MonitorInfo, display: DisplaySettings): Pair<Int, Int> {
         val raw = when (display.resolutionMode) {
-            ResolutionMode.AUTO -> monitor.widthPx to monitor.heightPx
+            ResolutionMode.AUTO -> {
+                val width = monitor.widthPx.takeIf { it > 0 } ?: 3840
+                val height = monitor.heightPx.takeIf { it > 0 } ?: 2160
+                width to height
+            }
             ResolutionMode.P1080 -> presetSize(monitor, 1920)
             ResolutionMode.P1440 -> presetSize(monitor, 2560)
             ResolutionMode.P2160 -> presetSize(monitor, 3840)
@@ -1530,9 +1629,9 @@ class StudioController(
     private fun fallbackMonitor(): MonitorInfo = MonitorInfo(
         id = "virtual-primary",
         name = "Desktop",
-        bounds = MonitorBounds(0, 0, 1920, 1080),
-        widthPx = 1920,
-        heightPx = 1080,
+        bounds = MonitorBounds(0, 0, 3840, 2160),
+        widthPx = 3840,
+        heightPx = 2160,
         scale = 1f,
         isPrimary = true,
         plasmaScreenIndex = 0

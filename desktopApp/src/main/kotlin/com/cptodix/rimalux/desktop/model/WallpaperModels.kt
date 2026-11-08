@@ -166,6 +166,7 @@ data class DesktopSettings(
 
 enum class ApplyTarget {
     ALL_DISPLAYS,
+    ALL_DISPLAYS_SEPARATE,
     SELECTED_DISPLAY
 }
 
