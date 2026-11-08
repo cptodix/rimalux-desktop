@@ -24,10 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,7 +39,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +54,8 @@ import androidx.compose.ui.unit.dp
 import com.cptodix.rimalux.desktop.BuildInfo
 import com.cptodix.rimalux.desktop.controller.StudioController
 import com.cptodix.rimalux.desktop.controller.StudioUiState
+import com.cptodix.rimalux.desktop.ui.components.ChoiceItem
+import com.cptodix.rimalux.desktop.ui.components.ChoiceRow
 import com.cptodix.rimalux.desktop.ui.localizedDisplayName
 import com.cptodix.rimalux.desktop.ui.localizedString
 import com.cptodix.rimalux.desktop.ui.localizedStringOr
@@ -78,11 +77,6 @@ enum class OptionsPage {
     SETTINGS
 }
 
-private enum class QuickDialog {
-    PATTERN_LAYOUT,
-    COLOR_FILL
-}
-
 @Composable
 fun OptionsModal(
     state: StudioUiState,
@@ -91,8 +85,6 @@ fun OptionsModal(
     onPageChange: (OptionsPage) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var quickDialog by remember { mutableStateOf<QuickDialog?>(null) }
-
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -137,15 +129,8 @@ fun OptionsModal(
                         controller = controller,
                         page = page,
                         onPageChange = onPageChange,
-                        onQuickDialog = { quickDialog = it },
                         modifier = Modifier
-                            .width(
-                                if (page == OptionsPage.NONE) {
-                                    panelWidth
-                                } else {
-                                    minOf(430.dp, panelWidth)
-                                }
-                            )
+                            .width(minOf(430.dp, panelWidth))
                             .fillMaxHeight()
                     )
 
@@ -183,44 +168,6 @@ fun OptionsModal(
         }
     }
 
-    when (quickDialog) {
-        QuickDialog.PATTERN_LAYOUT -> QuickChoiceDialog(
-            title = localizedStringOr("desktop_pattern_layout", "Pattern Layout"),
-            options = listOf(
-                localizedStringOr("desktop_layout_normal", "Normal") to
-                    (state.config.patternWeightMode == PatternWeightMode.NORMAL),
-                localizedStringOr("desktop_layout_center", "Center Weighted") to
-                    (state.config.patternWeightMode == PatternWeightMode.CENTER_WEIGHTED)
-            ),
-            onSelect = { index ->
-                controller.setPatternWeightMode(
-                    if (index == 0) PatternWeightMode.NORMAL else PatternWeightMode.CENTER_WEIGHTED
-                )
-                quickDialog = null
-            },
-            onDismiss = { quickDialog = null }
-        )
-
-        QuickDialog.COLOR_FILL -> QuickChoiceDialog(
-            title = localizedStringOr("desktop_color_fill", "Color Fill"),
-            options = listOf(
-                localizedStringOr("desktop_fill_solid", "Solid") to
-                    (state.config.colorFillMode == ColorFillMode.SOLID),
-                localizedStringOr("desktop_fill_gradient", "Gradient") to
-                    (state.config.colorFillMode == ColorFillMode.GRADIENT)
-            ),
-            onSelect = { index ->
-                controller.setColorFillMode(
-                    if (index == 0) ColorFillMode.SOLID else ColorFillMode.GRADIENT
-                )
-                quickDialog = null
-            },
-            onDismiss = { quickDialog = null }
-        )
-
-        null -> Unit
-    }
-
 }
 
 @Composable
@@ -229,7 +176,6 @@ private fun OptionsLeftPane(
     controller: StudioController,
     page: OptionsPage,
     onPageChange: (OptionsPage) -> Unit,
-    onQuickDialog: (QuickDialog) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val patternsSummary = if (state.config.patternsRandomized) {
@@ -406,6 +352,11 @@ private fun OptionsLeftPane(
                     title = localizedStringOr("nav_patterns", "Patterns"),
                     summary = patternsSummary,
                     selected = page == OptionsPage.PATTERNS,
+                    trailingIcon = if (page == OptionsPage.PATTERNS) {
+                        Icons.AutoMirrored.Rounded.ArrowBack
+                    } else {
+                        Icons.AutoMirrored.Rounded.KeyboardArrowRight
+                    },
                     onClick = {
                         onPageChange(
                             if (page == OptionsPage.PATTERNS) OptionsPage.NONE else OptionsPage.PATTERNS
@@ -416,11 +367,24 @@ private fun OptionsLeftPane(
                     modifier = Modifier.padding(horizontal = 20.dp),
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
                 )
-                OptionsRow(
+                ChoiceRow(
                     title = localizedStringOr("label_pattern_layout", "Pattern Layout"),
                     summary = weightLabel,
-                    selected = false,
-                    onClick = { onQuickDialog(QuickDialog.PATTERN_LAYOUT) }
+                    items = listOf(
+                        ChoiceItem(
+                            label = localizedStringOr("weight_mode_normal", "Normal"),
+                            selected = state.config.patternWeightMode == PatternWeightMode.NORMAL
+                        ),
+                        ChoiceItem(
+                            label = localizedStringOr("weight_mode_center", "Center Weighted"),
+                            selected = state.config.patternWeightMode == PatternWeightMode.CENTER_WEIGHTED
+                        )
+                    ),
+                    onSelect = { index ->
+                        controller.setPatternWeightMode(
+                            if (index == 0) PatternWeightMode.NORMAL else PatternWeightMode.CENTER_WEIGHTED
+                        )
+                    }
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 20.dp),
@@ -430,6 +394,11 @@ private fun OptionsLeftPane(
                     title = localizedStringOr("nav_palettes", "Colors"),
                     summary = paletteSummary,
                     selected = page == OptionsPage.COLORS,
+                    trailingIcon = if (page == OptionsPage.COLORS) {
+                        Icons.AutoMirrored.Rounded.ArrowBack
+                    } else {
+                        Icons.AutoMirrored.Rounded.KeyboardArrowRight
+                    },
                     onClick = {
                         onPageChange(
                             if (page == OptionsPage.COLORS) OptionsPage.NONE else OptionsPage.COLORS
@@ -440,26 +409,22 @@ private fun OptionsLeftPane(
                     modifier = Modifier.padding(horizontal = 20.dp),
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
                 )
-                OptionsRow(
+                ChoiceRow(
                     title = localizedStringOr("label_color_shading", "Color Fill Style"),
                     summary = fillLabel,
-                    selected = false,
-                    onClick = { onQuickDialog(QuickDialog.COLOR_FILL) }
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
-                )
-                OptionsRow(
-                    title = localizedStringOr("desktop_desktop_settings", "Advanced Settings"),
-                    summary = localizedStringOr(
-                        "desktop_settings_subtitle",
-                        "Advanced desktop behavior, display output, and diagnostics"
+                    items = listOf(
+                        ChoiceItem(
+                            label = localizedStringOr("fill_mode_solid", "Solid Colors"),
+                            selected = state.config.colorFillMode == ColorFillMode.SOLID
+                        ),
+                        ChoiceItem(
+                            label = localizedStringOr("fill_mode_gradient", "Gradients"),
+                            selected = state.config.colorFillMode == ColorFillMode.GRADIENT
+                        )
                     ),
-                    selected = page == OptionsPage.SETTINGS,
-                    onClick = {
-                        onPageChange(
-                            if (page == OptionsPage.SETTINGS) OptionsPage.NONE else OptionsPage.SETTINGS
+                    onSelect = { index ->
+                        controller.setColorFillMode(
+                            if (index == 0) ColorFillMode.SOLID else ColorFillMode.GRADIENT
                         )
                     }
                 )
@@ -467,6 +432,34 @@ private fun OptionsLeftPane(
         }
 
         AutoChangeSection(state = state, controller = controller)
+
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            border = BorderStroke(
+                width = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
+            )
+        ) {
+            OptionsRow(
+                title = localizedStringOr("desktop_desktop_settings", "Advanced Settings"),
+                summary = localizedStringOr(
+                    "desktop_settings_subtitle",
+                    "Advanced desktop behavior, display output, and diagnostics"
+                ),
+                selected = page == OptionsPage.SETTINGS,
+                trailingIcon = if (page == OptionsPage.SETTINGS) {
+                    Icons.AutoMirrored.Rounded.ArrowBack
+                } else {
+                    Icons.AutoMirrored.Rounded.KeyboardArrowRight
+                },
+                onClick = {
+                    onPageChange(
+                        if (page == OptionsPage.SETTINGS) OptionsPage.NONE else OptionsPage.SETTINGS
+                    )
+                }
+            )
+        }
 
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -493,7 +486,7 @@ private fun OptionsRow(
     title: String,
     summary: String,
     selected: Boolean,
-    leadingIcon: ImageVector? = null,
+    trailingIcon: ImageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
     onClick: () -> Unit
 ) {
     Surface(
@@ -514,17 +507,6 @@ private fun OptionsRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (leadingIcon != null) {
-                Icon(
-                    imageVector = leadingIcon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .padding(end = 0.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-            }
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -544,11 +526,7 @@ private fun OptionsRow(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Icon(
-                imageVector = if (selected) {
-                    Icons.Rounded.Check
-                } else {
-                    Icons.AutoMirrored.Rounded.KeyboardArrowRight
-                },
+                imageVector = trailingIcon,
                 contentDescription = null,
                 tint = if (selected) {
                     MaterialTheme.colorScheme.primary
@@ -557,82 +535,6 @@ private fun OptionsRow(
                 },
                 modifier = Modifier.size(20.dp)
             )
-        }
-    }
-}
-
-@Composable
-private fun QuickChoiceDialog(
-    title: String,
-    options: List<Pair<String, Boolean>>,
-    onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit
-) {
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(text = title, style = MaterialTheme.typography.titleLarge)
-                options.forEachIndexed { index, (label, selected) ->
-                    Surface(
-                        onClick = { onSelect(index) },
-                        shape = MaterialTheme.shapes.medium,
-                        color = if (selected) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerHighest
-                        },
-                        border = BorderStroke(
-                            width = if (selected) 1.dp else 0.5.dp,
-                            color = if (selected) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
-                            } else {
-                                MaterialTheme.colorScheme.outlineVariant
-                            }
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (selected) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(
-                        onClick = onDismiss,
-                        shape = MaterialTheme.shapes.small,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    ) {
-                        Text(localizedStringOr("desktop_cancel", "Cancel"))
-                    }
-                }
-            }
         }
     }
 }

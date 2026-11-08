@@ -117,12 +117,14 @@ accepted by the user on 2026-11-07.
 
 1. [ ] Fullscreen preview via F11 / double-click, exit with Esc (implemented).
 2. [ ] Options modal floats above the media controls, animates from the bottom, has no
-       title/close/back row, and the left sheet keeps its width when a page opens.
+       title/close/back row, and the left sheet keeps its width when a page opens or closes.
 3. [ ] Apply popup and Auto-Change Apply To both list displays, All Displays, and
        All Displays Separate.
+3b. [ ] Page rows show a left chevron while open; quick-choice rows keep a right chevron.
+3c. [ ] Choice and Auto-Change popups are horizontally centered on their triggering row.
 4. [ ] Preview stays display-agnostic; no display selector/layout icons.
-5. [ ] Advanced Settings: resolution popup shows `W×H`, folder grid is usable, buttons/cards
-       match the Android shape and hierarchy rules.
+5. [ ] Advanced Settings: Appearance card uses popup rows for Language, Resolution (`W×H`), and
+       Fit Mode; folder grid is usable; buttons/cards match the Android shape/hierarchy rules.
 6. [ ] Auto Match uses native resolutions; 4K fallback when detection fails.
 7. [ ] Auto-Change Status section shows next/last/Change Now and whether rotation is active via
        the app, tray, or OS scheduler.

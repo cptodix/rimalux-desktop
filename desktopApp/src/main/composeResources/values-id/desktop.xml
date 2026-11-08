@@ -189,6 +189,7 @@
     <!-- Settings -->
     <string name="desktop_settings_title">Pengaturan Lanjutan</string>
     <string name="desktop_settings_subtitle">Perilaku desktop lanjutan, keluaran layar, dan diagnostik</string>
+    <string name="desktop_appearance">Tampilan</string>
     <string name="desktop_language">Bahasa</string>
     <string name="desktop_resolution">Resolusi Wallpaper</string>
     <string name="desktop_resolution_auto">Cocok Otomatis</string>

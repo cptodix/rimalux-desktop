@@ -116,12 +116,17 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
      Colors expands the modal to the right like a tablet; the left sheet remains visible.
    - The options modal has no title row, no close button, and no back button; dismiss via scrim,
      `Esc`, or the active row. The left sheet keeps the same width when a page opens.
-   - Advanced Settings is a row in the joined options card (same typography/height as Patterns
-     and Colors) and opens in the expanded right pane.
+   - Advanced Settings is the bottom-most separate options card and opens in the expanded right
+     pane. Page rows use a left chevron while their page is open; quick-choice rows keep a right
+     chevron.
+   - Language, Wallpaper Resolution, and Fit Mode are popup rows in the Advanced Settings
+     Appearance card, not chip rows.
    - Next/last change, Change Now, and the active auto-change mechanism live in the Advanced
      Settings “Auto-Change Status” section, not the compact Auto-Change card.
    - The Auto-Change Apply To popup and the studio Apply popup share the same list: displays,
      All Displays, All Displays Separate.
+   - Choice and Auto-Change popups are horizontally centered on the triggering row, not the
+     window. The options left sheet keeps a fixed width while pages open/close.
    - Patterns and Colors panes must match the Android options/behavior: mode segmented controls,
      category filters only in custom mode, select all/none, current-pattern highlight, palette
      removal, and no extra search/fill controls.

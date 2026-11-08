@@ -1,27 +1,23 @@
 package com.cptodix.rimalux.desktop.ui.screens
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import com.cptodix.rimalux.desktop.model.DisplaySettings
 import com.cptodix.rimalux.desktop.model.MonitorInfo
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,6 +51,8 @@ import com.cptodix.rimalux.desktop.model.AppLanguage
 import com.cptodix.rimalux.desktop.model.ApplyTarget
 import com.cptodix.rimalux.desktop.model.FitMode
 import com.cptodix.rimalux.desktop.model.ResolutionMode
+import com.cptodix.rimalux.desktop.ui.components.ChoiceItem
+import com.cptodix.rimalux.desktop.ui.components.ChoiceRow
 import com.cptodix.rimalux.desktop.ui.components.SectionCard
 import com.cptodix.rimalux.desktop.ui.localizedString
 import com.cptodix.rimalux.desktop.ui.localizedStringOr
@@ -107,183 +106,106 @@ fun SettingsScreen(
                 .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SectionCard(
-                title = localizedStringOr("desktop_language", "Language"),
-                modifier = Modifier.widthIn(max = 920.dp)
+            Surface(
+                modifier = Modifier.widthIn(max = 920.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(
+                    0.5.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
+                )
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AppLanguage.entries.forEach { language ->
-                        FilterChip(
-                            selected = state.languageTag == language.languageTag,
-                            onClick = { controller.setLanguage(language) },
-                            label = { Text(language.nativeName) },
-                            leadingIcon = if (state.languageTag == language.languageTag) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                                }
-                            } else {
-                                null
-                            }
-                        )
-                    }
-                }
-            }
-
-            SectionCard(
-                title = localizedStringOr("desktop_resolution", "Wallpaper Resolution"),
-                modifier = Modifier.widthIn(max = 920.dp)
-            ) {
-                var resolutionMenu by remember { mutableStateOf(false) }
-                val monitor = state.selectedMonitor
-                Box {
-                    Surface(
-                        onClick = { resolutionMenu = true },
-                        shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        border = BorderStroke(
-                            0.5.dp,
-                            MaterialTheme.colorScheme.outlineVariant
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                Column {
+                    ChoiceRow(
+                        title = localizedStringOr("desktop_language", "Language"),
+                        summary = AppLanguage.entries
+                            .firstOrNull { it.languageTag == state.languageTag }
+                            ?.nativeName
+                            ?: state.languageTag,
+                        items = AppLanguage.entries.map { language ->
+                            ChoiceItem(
+                                label = language.nativeName,
+                                selected = state.languageTag == language.languageTag
+                            )
+                        },
+                        onSelect = { index -> controller.setLanguage(AppLanguage.entries[index]) }
+                    )
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
+                    )
+                    ChoiceRow(
+                        title = localizedStringOr("desktop_resolution", "Wallpaper Resolution"),
+                        summary = resolutionModeName(state.display.resolutionMode) +
+                            " · " + resolutionLabelFor(
+                                state.display.resolutionMode,
+                                state.selectedMonitor,
+                                state.display
+                            ),
+                        items = ResolutionMode.entries.map { mode ->
+                            ChoiceItem(
+                                label = resolutionModeName(mode),
+                                summary = resolutionLabelFor(mode, state.selectedMonitor, state.display),
+                                selected = state.display.resolutionMode == mode
+                            )
+                        },
+                        onSelect = { index ->
+                            controller.setResolutionMode(ResolutionMode.entries[index])
+                        }
+                    )
+                    if (state.display.resolutionMode == ResolutionMode.CUSTOM) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = resolutionModeName(state.display.resolutionMode),
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                                Text(
-                                    text = resolutionLabelFor(
-                                        state.display.resolutionMode,
-                                        monitor,
-                                        state.display
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Rounded.ArrowDropDown,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            OutlinedTextField(
+                                value = customWidth,
+                                onValueChange = { customWidth = it.filter(Char::isDigit).take(5) },
+                                label = { Text(localizedStringOr("desktop_custom_width", "Width")) },
+                                singleLine = true,
+                                modifier = Modifier.widthIn(min = 120.dp, max = 180.dp)
                             )
-                        }
-                    }
-                    DropdownMenu(
-                        expanded = resolutionMenu,
-                        onDismissRequest = { resolutionMenu = false }
-                    ) {
-                        ResolutionMode.entries.forEach { mode ->
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(resolutionModeName(mode))
-                                        Text(
-                                            text = resolutionLabelFor(mode, monitor, state.display),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                },
-                                leadingIcon = if (state.display.resolutionMode == mode) {
-                                    {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Check,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                } else {
-                                    null
-                                },
+                            OutlinedTextField(
+                                value = customHeight,
+                                onValueChange = { customHeight = it.filter(Char::isDigit).take(5) },
+                                label = { Text(localizedStringOr("desktop_custom_height", "Height")) },
+                                singleLine = true,
+                                modifier = Modifier.widthIn(min = 120.dp, max = 180.dp)
+                            )
+                            Button(
                                 onClick = {
-                                    controller.setResolutionMode(mode)
-                                    resolutionMenu = false
-                                }
-                            )
-                        }
-                    }
-                }
-                if (state.display.resolutionMode == ResolutionMode.CUSTOM) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = customWidth,
-                            onValueChange = { customWidth = it.filter(Char::isDigit).take(5) },
-                            label = { Text(localizedStringOr("desktop_custom_width", "Width")) },
-                            singleLine = true,
-                            modifier = Modifier.widthIn(min = 120.dp, max = 180.dp)
-                        )
-                        OutlinedTextField(
-                            value = customHeight,
-                            onValueChange = { customHeight = it.filter(Char::isDigit).take(5) },
-                            label = { Text(localizedStringOr("desktop_custom_height", "Height")) },
-                            singleLine = true,
-                            modifier = Modifier.widthIn(min = 120.dp, max = 180.dp)
-                        )
-                        Button(
-                            onClick = {
-                                val w = customWidth.toIntOrNull() ?: 2560
-                                val h = customHeight.toIntOrNull() ?: 1440
-                                controller.setCustomResolution(w, h)
-                            },
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Text(localizedStringOr("desktop_apply", "Apply"))
-                        }
-                    }
-                }
-                Text(
-                    text = localizedStringOr(
-                        "desktop_resolution_hint",
-                        "Auto Match uses each display's reported resolution. Presets use the long edge."
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            SectionCard(
-                title = localizedStringOr("desktop_fit_mode", "Fit Mode"),
-                modifier = Modifier.widthIn(max = 920.dp)
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FitMode.entries.forEach { mode ->
-                        FilterChip(
-                            selected = state.display.fitMode == mode,
-                            onClick = { controller.setFitMode(mode) },
-                            label = {
-                                Text(
-                                    when (mode) {
-                                        FitMode.FILL -> localizedStringOr("desktop_fit_fill", "Fill")
-                                        FitMode.FIT -> localizedStringOr("desktop_fit_fit", "Fit")
-                                        FitMode.CENTER -> localizedStringOr("desktop_fit_center", "Center")
-                                        FitMode.TILE -> localizedStringOr("desktop_fit_tile", "Tile")
-                                    }
-                                )
-                            },
-                            leadingIcon = if (state.display.fitMode == mode) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                                }
-                            } else {
-                                null
+                                    val w = customWidth.toIntOrNull() ?: 2560
+                                    val h = customHeight.toIntOrNull() ?: 1440
+                                    controller.setCustomResolution(w, h)
+                                },
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Text(localizedStringOr("desktop_apply", "Apply"))
                             }
-                        )
+                        }
                     }
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
+                    )
+                    ChoiceRow(
+                        title = localizedStringOr("desktop_fit_mode", "Fit Mode"),
+                        summary = fitModeLabel(state.display.fitMode),
+                        items = FitMode.entries.map { mode ->
+                            ChoiceItem(
+                                label = fitModeLabel(mode),
+                                selected = state.display.fitMode == mode
+                            )
+                        },
+                        onSelect = { index -> controller.setFitMode(FitMode.entries[index]) }
+                    )
+                    Text(
+                        text = localizedStringOr(
+                            "desktop_resolution_hint",
+                            "Auto Match uses each display's reported resolution. Presets use the long edge."
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    )
                 }
             }
 
@@ -787,3 +709,11 @@ private fun autoChangeStatusText(state: StudioUiState): String {
 
 private fun formatTimestamp(millis: Long): String =
     SimpleDateFormat("EEE HH:mm", Locale.getDefault()).format(Date(millis))
+
+@Composable
+private fun fitModeLabel(mode: FitMode): String = when (mode) {
+    FitMode.FILL -> localizedStringOr("desktop_fit_fill", "Fill")
+    FitMode.FIT -> localizedStringOr("desktop_fit_fit", "Fit")
+    FitMode.CENTER -> localizedStringOr("desktop_fit_center", "Center")
+    FitMode.TILE -> localizedStringOr("desktop_fit_tile", "Tile")
+}

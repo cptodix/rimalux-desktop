@@ -135,7 +135,10 @@ This is the working checklist for AI agents and contributors. Keep statuses curr
 - [x] Advanced Settings row moved into the joined options card
 - [x] Auto-Change Status section in Advanced Settings (next/last/Change Now/mechanism)
 - [x] Auto-Change Apply To list matches the studio Apply popup
-- [x] Left options sheet keeps its width; no back button
+- [x] Left options sheet keeps its width; no back button; page rows use a left chevron
+- [x] Advanced Settings moved to the bottom separate section
+- [x] Language/resolution/fit mode use popup rows
+- [x] Choice/Auto-Change popups center on their triggering row
 - [x] Remove “Enjoying Rimalux?” card
 - [ ] Signing (needs release certificate/secrets)
 - [x] Release workflow

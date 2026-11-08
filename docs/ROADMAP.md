@@ -74,7 +74,9 @@
 - [x] Display-agnostic preview and Auto Match native resolution (4K fallback)
 - [x] Advanced Settings rename, resolution popup, folder grid, identify
 - [x] Auto-Change Status moved to Advanced Settings; Apply To list parity
-- [x] Options left sheet keeps its width; no back button
+- [x] Options left sheet keeps its width; no back button; page rows use a left chevron
+- [x] Advanced Settings bottom section; popup rows for Language/Resolution/Fit Mode
+- [x] Popups center on their triggering row
 - [x] CI build + tag-driven release automation
 - [ ] Signed installers (needs release certificate/secrets)
 - [ ] Update checker download/install flow

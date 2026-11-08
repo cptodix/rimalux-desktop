@@ -86,18 +86,25 @@ The modal is a floating dark panel anchored bottom-left. Its left column contain
    - Pattern Layout row with current mode and chevron (quick popup).
    - Colors row with palette summary and chevron.
    - Color Fill Style row with current mode and chevron (quick popup).
-   - **Advanced Settings** row (same typography/height as the rows above).
 2. **Auto-Change card**
    - Master switch, Apply To row, Interval row, Start at Login, Keep in Tray.
    - Apply To lists displays, **All Displays**, and **All Displays Separate**, matching the
      studio Apply popup.
    - Interval uses presets plus a custom minutes field.
-3. **About footer** with version/credit.
+3. **Advanced Settings** card, as the bottom-most separate section.
+4. **About footer** with version/credit.
 
 The modal floats above the bottom media controls, so the options button and media controls
 remain visible. It has no title row, no close button, and no back button. The left sheet keeps
 the same width when a page opens; clicking the active row again collapses the right pane. Dismiss
 via the scrim or `Esc`.
+
+Rows that open a page use a right chevron when collapsed and a left chevron when their page is
+open. Rows that open a choice popup keep a right chevron.
+
+All choice and Auto-Change popups are horizontally centered on the row that triggered them, not
+on the window. Pattern Layout / Color Fill center over the left sheet; Advanced Settings choices
+center over the right page.
 
 Language is not duplicated in the options modal; it lives in the Advanced Settings pane.
 
@@ -152,10 +159,11 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 
 ## Settings pane
 
-- Language.
-- Wallpaper resolution as a popup list (Auto Match / 1920 / 2560 / 3840 / Custom), showing the
-  full `W×H` resolution for each option.
-- Fit mode (Fill / Fit / Center / Tile).
+- Appearance card with three popup rows:
+  - Language.
+  - Wallpaper resolution (Auto Match / 1920 / 2560 / 3840 / Custom), showing the full `W×H`
+    resolution for each option.
+  - Fit mode (Fill / Fit / Center / Tile).
 - Backend status, refresh, override chips, custom command, test.
 - Displays list with per-monitor resolution and an Identify action.
 - Folder shortcuts in a two-column grid with icons.

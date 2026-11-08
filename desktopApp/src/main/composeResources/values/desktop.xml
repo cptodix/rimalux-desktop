@@ -189,6 +189,7 @@
     <!-- Settings -->
     <string name="desktop_settings_title">Advanced Settings</string>
     <string name="desktop_settings_subtitle">Advanced desktop behavior, display output, and diagnostics</string>
+    <string name="desktop_appearance">Appearance</string>
     <string name="desktop_language">Language</string>
     <string name="desktop_resolution">Wallpaper Resolution</string>
     <string name="desktop_resolution_auto">Auto Match</string>
