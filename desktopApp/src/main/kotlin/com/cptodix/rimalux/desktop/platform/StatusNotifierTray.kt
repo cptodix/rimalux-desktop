@@ -80,6 +80,7 @@ internal class StatusNotifierTray(
             val notifier = StatusNotifierItemImpl(
                 labels = labels,
                 autoChangeEnabled = autoChangeEnabled,
+                iconPixmaps = AppIconPixmaps.pixmaps(TrayTheme.lightGlyph),
                 callbacks = Callbacks(
                     open = { SwingUtilities.invokeLater(onOpen) },
                     toggleAutoChange = { SwingUtilities.invokeLater(onToggleAutoChange) },
@@ -186,6 +187,7 @@ internal class StatusNotifierTray(
     class StatusNotifierItemImpl(
         @Volatile var labels: TrayLabels,
         @Volatile var autoChangeEnabled: Boolean,
+        private val iconPixmaps: List<IconPixmapStruct>,
         val callbacks: Callbacks
     ) : StatusNotifierItem {
 
@@ -202,7 +204,7 @@ internal class StatusNotifierTray(
         // Empty name makes Plasma fall back to IconPixmap, which ships the real app icon.
         override fun getIconName(): String = ""
 
-        override fun getIconPixmap(): List<IconPixmapStruct> = AppIconPixmaps.pixmaps
+        override fun getIconPixmap(): List<IconPixmapStruct> = iconPixmaps
 
         override fun isItemIsMenu(): Boolean = false
 
@@ -507,12 +509,15 @@ internal class StatusNotifierTray(
 
     private object AppIconPixmaps {
         private val sizes = listOf(22, 24, 32, 48)
+        private val onDark by lazy { load("/icons/tray-on-dark.png") }
+        private val onLight by lazy { load("/icons/tray-on-light.png") }
 
-        val pixmaps: List<IconPixmapStruct> by lazy { load() }
+        fun pixmaps(lightGlyph: Boolean): List<IconPixmapStruct> =
+            if (lightGlyph) onDark else onLight
 
-        private fun load(): List<IconPixmapStruct> {
+        private fun load(path: String): List<IconPixmapStruct> {
             val source = runCatching {
-                StatusNotifierTray::class.java.getResourceAsStream("/icons/tray.png")
+                StatusNotifierTray::class.java.getResourceAsStream(path)
                     ?.use { ImageIO.read(it) }
             }.getOrNull() ?: return emptyList()
 

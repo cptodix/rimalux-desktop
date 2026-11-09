@@ -35,6 +35,7 @@ import com.cptodix.rimalux.desktop.platform.PlatformPaths
 import com.cptodix.rimalux.desktop.platform.ProcessRunner
 import com.cptodix.rimalux.desktop.platform.SingleInstanceManager
 import com.cptodix.rimalux.desktop.platform.TrayLabels
+import com.cptodix.rimalux.desktop.platform.TrayTheme
 import com.cptodix.rimalux.desktop.platform.UpdateChecker
 import com.cptodix.rimalux.desktop.platform.WallpaperBackendFactory
 import com.cptodix.rimalux.desktop.render.SkiaWallpaperRenderer
@@ -232,8 +233,12 @@ fun main(args: Array<String>) {
             val current = tray
             if (current == null) {
                 val image = runCatching {
-                    DesktopTray::class.java.getResourceAsStream("/icons/tray.png")
-                        ?.use { ImageIO.read(it) }
+                    val iconPath = if (TrayTheme.lightGlyph) {
+                        "/icons/tray-on-dark.png"
+                    } else {
+                        "/icons/tray-on-light.png"
+                    }
+                    DesktopTray::class.java.getResourceAsStream(iconPath)?.use { ImageIO.read(it) }
                 }.getOrNull()
                 if (image != null) {
                     val created = DesktopTray(

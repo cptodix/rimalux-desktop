@@ -264,6 +264,7 @@ private fun MediaControls(
 ) {
     var applyDialogVisible by remember { mutableStateOf(false) }
     var applyAnchorX by remember { mutableStateOf(0f) }
+    var applyAnchorTop by remember { mutableStateOf(0f) }
 
     Surface(
         modifier = modifier,
@@ -299,7 +300,11 @@ private fun MediaControls(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .size(56.dp)
-                    .onGloballyPositioned { applyAnchorX = it.boundsInWindow().center.x }
+                    .onGloballyPositioned {
+                        val bounds = it.boundsInWindow()
+                        applyAnchorX = bounds.center.x
+                        applyAnchorTop = bounds.top
+                    }
                     .semantics { contentDescription = applyLabel }
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -345,6 +350,7 @@ private fun MediaControls(
     ApplyDialog(
         visible = applyDialogVisible,
         anchorCenterXPx = applyAnchorX,
+        anchorTopPx = applyAnchorTop,
         state = state,
         controller = controller,
         onDismiss = { applyDialogVisible = false }
@@ -384,6 +390,7 @@ private fun ThickCheck(
 private fun ApplyDialog(
     visible: Boolean,
     anchorCenterXPx: Float,
+    anchorTopPx: Float,
     state: StudioUiState,
     controller: StudioController,
     onDismiss: () -> Unit
@@ -450,6 +457,9 @@ private fun ApplyDialog(
         anchorCenterXPx = anchorCenterXPx,
         title = localizedStringOr("desktop_apply_to", "Apply To"),
         items = items,
+        anchorTopPx = anchorTopPx,
+        showCancel = false,
+        separatorBeforeIndex = monitors.size + 2,
         onSelect = { index ->
             when {
                 index < monitors.size ->

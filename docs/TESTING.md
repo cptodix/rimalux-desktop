@@ -121,9 +121,10 @@ accepted by the user on 2026-11-07.
 1. [ ] Fullscreen preview via F11 / double-click, exit with Esc (implemented).
 2. [ ] Options modal floats above the media controls, animates from the bottom, has no
        title/close/back row, and the left sheet keeps its width when a page opens or closes.
-3. [ ] Apply modal and Auto-Change Apply To both list displays, All Displays, and
-       All Displays Separate; the apply modal also offers Save Wallpaper.
+3. [ ] Apply modal opens above the apply button, grows upward, has no cancel row, and lists
+       displays, All Displays, All Displays Separate, then a divider and Save Wallpaper.
 3a. [ ] Apply button is circular with a thick checkmark and no separate save button in the pill.
+3d. [ ] Popups use a shadow, not a full-window dark scrim; clicking outside dismisses them.
 3b. [ ] Page rows show a left chevron while open; quick-choice rows keep a right chevron.
 3c. [ ] Choice and Auto-Change popups are horizontally centered on their triggering row.
 4. [ ] Preview stays display-agnostic; no display selector/layout icons.

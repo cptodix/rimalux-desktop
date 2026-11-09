@@ -1,7 +1,8 @@
 package com.cptodix.rimalux.desktop.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,6 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -140,11 +144,15 @@ fun AnchoredChoiceDialog(
     title: String,
     items: List<ChoiceItem>,
     onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    anchorTopPx: Float? = null,
+    showCancel: Boolean = true,
+    separatorBeforeIndex: Int? = null
 ) {
     AnchoredDialog(
         visible = visible,
         anchorCenterXPx = anchorCenterXPx,
+        anchorTopPx = anchorTopPx,
         onDismiss = onDismiss
     ) {
         Text(
@@ -152,6 +160,12 @@ fun AnchoredChoiceDialog(
             style = MaterialTheme.typography.titleLarge
         )
         items.forEachIndexed { index, item ->
+            if (index == separatorBeforeIndex) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 2.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+            }
             Surface(
                 onClick = { onSelect(index) },
                 enabled = item.enabled,
@@ -199,37 +213,51 @@ fun AnchoredChoiceDialog(
                 }
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            TextButton(
-                onClick = onDismiss,
-                shape = MaterialTheme.shapes.small
+        if (showCancel) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Text(localizedStringOr("desktop_cancel", "Cancel"))
+                TextButton(
+                    onClick = onDismiss,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(localizedStringOr("desktop_cancel", "Cancel"))
+                }
             }
         }
     }
 }
 
 /**
- * A centered dialog whose horizontal center is aligned with the triggering row.
+ * A dialog whose horizontal center is aligned with the triggering row.
+ *
+ * When [anchorTopPx] is set the dialog sits directly above that y coordinate and grows upward
+ * from its bottom edge; otherwise it is centered vertically.
  */
 @Composable
 fun AnchoredDialog(
     visible: Boolean,
     anchorCenterXPx: Float,
     onDismiss: () -> Unit,
+    anchorTopPx: Float? = null,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
 ) {
     if (!visible) return
 
-    var scrimDismissEnabled by remember { mutableStateOf(false) }
+    var clickOutsideGuard by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(180)
-        scrimDismissEnabled = true
+        clickOutsideGuard = true
     }
+
+    var appeared by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { appeared = true }
+    val progress by animateFloatAsState(
+        targetValue = if (appeared) 1f else 0f,
+        animationSpec = tween(170),
+        label = "anchored_dialog"
+    )
 
     Popup(
         popupPositionProvider = remember {
@@ -253,15 +281,15 @@ fun AnchoredDialog(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.56f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = { if (scrimDismissEnabled) onDismiss() }
+                    onClick = { if (clickOutsideGuard) onDismiss() }
                 )
         ) {
             val density = LocalDensity.current
             val screenWidthPx = with(density) { maxWidth.toPx() }
+            val screenHeightPx = with(density) { maxHeight.toPx() }
             val dialogWidth = minOf(360.dp, maxWidth - 32.dp)
             val dialogWidthPx = with(density) { dialogWidth.toPx() }
             val marginPx = with(density) { 16.dp.toPx() }
@@ -270,12 +298,41 @@ fun AnchoredDialog(
             val offsetPx = (anchorCenterXPx - screenWidthPx / 2f)
                 .coerceIn(-maxOffsetPx, maxOffsetPx)
 
+            val aboveAnchor = anchorTopPx != null
+            val gapPx = with(density) { 10.dp.toPx() }
+            val verticalOffset = if (anchorTopPx != null) {
+                -(screenHeightPx - anchorTopPx + gapPx).roundToInt()
+            } else {
+                0
+            }
+            val maxDialogHeight = if (anchorTopPx != null) {
+                with(density) { (anchorTopPx - gapPx - 16.dp.toPx()).toDp() }
+                    .coerceAtLeast(200.dp)
+            } else {
+                maxHeight - 32.dp
+            }
+
             Surface(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset { IntOffset(offsetPx.roundToInt(), 0) }
+                    .align(if (aboveAnchor) Alignment.BottomCenter else Alignment.Center)
+                    .offset { IntOffset(offsetPx.roundToInt(), verticalOffset) }
                     .width(dialogWidth)
-                    .heightIn(max = maxHeight - 32.dp)
+                    .heightIn(max = maxDialogHeight)
+                    .graphicsLayer {
+                        alpha = progress
+                        val scale = if (aboveAnchor) {
+                            0.86f + 0.14f * progress
+                        } else {
+                            0.94f + 0.06f * progress
+                        }
+                        scaleX = scale
+                        scaleY = scale
+                        transformOrigin = if (aboveAnchor) {
+                            TransformOrigin(0.5f, 1f)
+                        } else {
+                            TransformOrigin.Center
+                        }
+                    }
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -283,7 +340,8 @@ fun AnchoredDialog(
                     ),
                 shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp
+                tonalElevation = 6.dp,
+                shadowElevation = 28.dp
             ) {
                 Column(
                     modifier = Modifier

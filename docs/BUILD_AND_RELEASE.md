@@ -96,10 +96,13 @@ Cross-compilation is not supported by jpackage. Use the CI matrix.
 
 The repository ships two workflows:
 
-- `.github/workflows/build.yml` — tests on Ubuntu, packages DEB/RPM on Linux, packages EXE/MSI
-  on Windows, uploads artifacts.
-- `.github/workflows/release.yml` — on a `v*` tag (or manual dispatch), builds Linux and Windows
-  installers and attaches them to the GitHub release.
+- `.github/workflows/build.yml` — manual dispatch only. Tests on Ubuntu, packages DEB/RPM on
+  Linux, packages EXE/MSI on Windows, uploads artifacts.
+- `.github/workflows/release.yml` — manual dispatch only (requires a release tag input). Builds
+  Linux and Windows installers and attaches them to the GitHub release.
+
+Neither workflow runs on push or pull request; start them from the Actions tab with
+**Run workflow**.
 
 Steps in the build workflow:
 

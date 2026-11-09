@@ -37,7 +37,7 @@ background auto-change.
   4K fallback.
 - Support tooling: diagnostics bundle export, GitHub update check, and an optional systemd user
   timer / Windows Task Scheduler mode.
-- Linux and Windows CI packaging workflows (DEB/RPM, EXE/MSI) and tag-driven releases.
+- Manual-dispatch Linux and Windows CI packaging workflows (DEB/RPM, EXE/MSI) and releases.
 - Live Skia-rendered previews with exact true-black measurement.
 - 80 patterns, 41 palettes, custom palettes, true-black slider/range.
 - Solid and gradient color fills.

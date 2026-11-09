@@ -40,8 +40,9 @@ persistent settings panel.
 
 ### Apply To modal
 
-Pressing Apply opens the anchored modal (same component as the Pattern Layout picker),
-horizontally centered on the apply button:
+Pressing Apply opens the anchored modal directly above the apply button. It grows upward from
+its bottom edge, has no cancel/close row, and closes on selection or a click outside. A divider
+separates the apply targets from **Save Wallpaper**.
 
 - Every detected display, with its native resolution (primary marked).
 - **All Displays** — the current preview design rendered at every display’s resolution.
@@ -49,8 +50,7 @@ horizontally centered on the apply button:
   wallpaper only; the preview stays on the current design.
 - **Save Wallpaper** — lossless PNG export for every display.
 
-The modal closes on selection, scrim click, or `Esc`; the Apply button shows a spinner while
-applying or exporting.
+The Apply button shows a spinner while applying or exporting.
 
 ### Info pill
 
@@ -101,13 +101,14 @@ The modal is a floating dark panel anchored bottom-left. Its left column contain
 The modal floats above the bottom media controls, so the options button and media controls
 remain visible. It has no title row, no close button, and no back button. The left sheet keeps
 the same width when a page opens; clicking the active row again collapses the right pane. Dismiss
-via the scrim or `Esc`.
+by clicking outside or `Esc`; the app is not dimmed, the modal floats on a shadow.
 
 Rows that open a page use a right chevron when collapsed and a left chevron when their page is
 open. Rows that open a choice popup keep a right chevron.
 
 All choice and Auto-Change popups are horizontally centered on the row that triggered them, not
-on the window. Pattern Layout / Color Fill center over the left sheet; Advanced Settings choices
+on the window. Popups do not dim the app with a scrim tint; they float on a shadow and dismiss
+when clicking outside. Pattern Layout / Color Fill center over the left sheet; Advanced Settings choices
 center over the right page.
 
 Language is not duplicated in the options modal; it lives in the Advanced Settings pane.
@@ -126,7 +127,7 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 - The left sheet stays visible and scrollable at the same width as the collapsed state.
 - The right pane shows the existing Patterns, Colors, or Advanced Settings content.
 - Clicking the active row again collapses the right pane.
-- Clicking the scrim dismisses the modal.
+- Clicking outside the modal dismisses it.
 - `Esc` dismisses the modal.
 - The modal animates in from the bottom and slides/fades out on close.
 
