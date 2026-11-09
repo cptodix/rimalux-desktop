@@ -136,5 +136,6 @@ rimalux-desktop/
 
 ## License
 
-GPL-3.0. See [`LICENSE`](LICENSE). The engine and design language originate from the
-Android Rimalux project by Cptodix Studio.
+GPL-3.0. The engine and design language originate from the Android Rimalux project by
+Cptodix Studio, which is licensed under GPL-3.0; this desktop port remains under the same
+license. The GPL-3.0 text is available at <https://www.gnu.org/licenses/gpl-3.0.html>.
