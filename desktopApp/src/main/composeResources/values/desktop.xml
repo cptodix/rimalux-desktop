@@ -110,6 +110,8 @@
     <string name="desktop_randomize">Randomize</string>
     <string name="desktop_apply_wallpaper">Apply Wallpaper</string>
     <string name="desktop_save_png">Save PNG</string>
+    <string name="desktop_save_wallpaper">Save Wallpaper</string>
+    <string name="desktop_save_wallpaper_desc">Export PNG files for every display</string>
     <string name="desktop_save_all_png">Save All Displays</string>
     <string name="desktop_preview_all">Preview All</string>
     <string name="desktop_preview_selected">Preview Selected</string>

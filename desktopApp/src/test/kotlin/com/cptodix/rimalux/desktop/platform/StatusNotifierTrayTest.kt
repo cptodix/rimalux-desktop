@@ -82,6 +82,8 @@ class StatusNotifierTrayTest {
                 )
                 val all = properties.GetAll("org.kde.StatusNotifierItem")
                 assertTrue("IconPixmap must be exported", all.containsKey("IconPixmap"))
+                val pixmaps = all["IconPixmap"]?.value as? List<*>
+                assertTrue("IconPixmap must contain the tray icon", !pixmaps.isNullOrEmpty())
                 assertTrue("Menu must point at the dbusmenu object", all.containsKey("Menu"))
                 assertEquals(
                     "/MenuBar",

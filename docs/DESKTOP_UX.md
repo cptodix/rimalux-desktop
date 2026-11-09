@@ -19,9 +19,9 @@ persistent settings panel.
 │                 ┌────────────────────────────────┐                 │
 │                 │ Pattern · ● ● ● ● · 90% Black  │  info pill      │
 │                 └────────────────────────────────┘                 │
-│  ┌────┐        ┌──────────────────────────────┐                       │
-│  │ ☰  │        │  ⏮   [apply]   💾   ⏭        │                       │
-│  └────┘        └──────────────────────────────┘                       │
+│  ┌────┐        ┌────────────────────────┐                            │
+│  │ ☰  │        │   ⏮    ( ✓ )    ⏭      │                            │
+│  └────┘        └────────────────────────┘                            │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -30,23 +30,27 @@ persistent settings panel.
 - **Bottom left:** floating options button → opens the options modal.
 - **Bottom center:** media-player control pill:
   - Previous wallpaper (from history; disabled when history is empty).
-  - Apply wallpaper (primary button; opens the Apply To popup).
-  - Save PNG (lossless export).
+  - Apply wallpaper: a circular primary button with a thick checkmark that opens the Apply To
+    modal. It shows a spinner while applying or exporting.
   - Next wallpaper (prefetched; instant when the buffer is ready).
+  - There is no separate save button; saving lives inside the Apply To modal.
 - The preview is not tied to a selected display. There is no display selector or layout button
   in the studio chrome.
 - A subtle bottom gradient keeps controls readable without hiding the wallpaper.
 
-### Apply To popup
+### Apply To modal
 
-Pressing Apply opens a compact popup above the button:
+Pressing Apply opens the anchored modal (same component as the Pattern Layout picker),
+horizontally centered on the apply button:
 
-- Every detected display, with its native resolution.
+- Every detected display, with its native resolution (primary marked).
 - **All Displays** — the current preview design rendered at every display’s resolution.
 - **All Displays Separate** — a distinct generated design per display. This changes the live
   wallpaper only; the preview stays on the current design.
+- **Save Wallpaper** — lossless PNG export for every display.
 
-The popup is disabled while applying and shows a spinner on the Apply button.
+The modal closes on selection, scrim click, or `Esc`; the Apply button shows a spinner while
+applying or exporting.
 
 ### Info pill
 

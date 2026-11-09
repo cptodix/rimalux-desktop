@@ -49,7 +49,6 @@ import com.cptodix.rimalux.oled.wallpaper.engine.ColorFillMode
 import com.cptodix.rimalux.oled.wallpaper.engine.PatternWeightMode
 import com.cptodix.rimalux.oled.wallpaper.engine.StarterPalettes
 import com.cptodix.rimalux.oled.wallpaper.engine.WallpaperGeneratorEngine
-import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -232,10 +231,10 @@ fun main(args: Array<String>) {
         LaunchedEffect(trayLabels, state.autoChange.enabled) {
             val current = tray
             if (current == null) {
-                val bytes = runCatching { Res.readBytes("drawable/rimalux_icon.png") }.getOrNull()
-                val image = bytes?.let {
-                    runCatching { ImageIO.read(ByteArrayInputStream(it)) }.getOrNull()
-                }
+                val image = runCatching {
+                    DesktopTray::class.java.getResourceAsStream("/icons/tray.png")
+                        ?.use { ImageIO.read(it) }
+                }.getOrNull()
                 if (image != null) {
                     val created = DesktopTray(
                         image = image,

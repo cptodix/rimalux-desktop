@@ -105,9 +105,11 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
      desktop dashboard.
    - No menu bar, no side navigation rail, no phone mockups.
    - The wallpaper preview fills the entire window and is **not tied to a selected display**.
-   - Bottom media-player controls: options (left), previous / apply / save / next (center).
-   - Apply opens a compact popup above the button with each display, **All Displays** (same
-     design on every display), and **All Displays Separate** (a distinct design per display).
+   - Bottom media-player controls: options (left), previous / apply / next (center). The apply
+     button is circular with a thick checkmark.
+   - Apply opens the anchored modal (same style as the Pattern Layout picker) with each display,
+     **All Displays** (same design on every display), **All Displays Separate** (a distinct
+     design per display), and **Save Wallpaper** (PNG export).
    - A small floating pill above the bottom controls shows the pattern name, palette dots,
      and measured True Black percentage.
    - The options button opens a modal styled like the Android settings sheet. The modal floats

@@ -1,6 +1,7 @@
 package com.cptodix.rimalux.desktop.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,17 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Monitor
-import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,16 +35,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cptodix.rimalux.desktop.controller.RenderedItem
 import com.cptodix.rimalux.desktop.controller.StudioController
 import com.cptodix.rimalux.desktop.controller.StudioUiState
 import com.cptodix.rimalux.desktop.model.ApplyTarget
+import com.cptodix.rimalux.desktop.ui.components.AnchoredChoiceDialog
+import com.cptodix.rimalux.desktop.ui.components.ChoiceItem
 import com.cptodix.rimalux.desktop.ui.localizedString
 import com.cptodix.rimalux.desktop.ui.localizedStringOr
 import com.cptodix.rimalux.desktop.ui.localizedTitle
@@ -260,7 +262,9 @@ private fun MediaControls(
     controller: StudioController,
     modifier: Modifier = Modifier
 ) {
-    var applyMenuExpanded by remember { mutableStateOf(false) }
+    var applyDialogVisible by remember { mutableStateOf(false) }
+    var applyAnchorX by remember { mutableStateOf(0f) }
+
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge,
@@ -287,59 +291,30 @@ private fun MediaControls(
                 )
             }
 
-            Box {
-                Surface(
-                    onClick = { applyMenuExpanded = true },
-                    enabled = state.current != null && !state.isApplying,
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (state.isApplying) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(22.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Rounded.Wallpaper,
-                                contentDescription = localizedStringOr(
-                                    "desktop_apply_wallpaper",
-                                    "Apply Wallpaper"
-                                ),
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                    }
-                }
-                ApplyMenu(
-                    expanded = applyMenuExpanded,
-                    state = state,
-                    controller = controller,
-                    onDismiss = { applyMenuExpanded = false }
-                )
-            }
-
-            IconButton(
-                onClick = { controller.savePngs(ApplyTarget.ALL_DISPLAYS) },
-                enabled = state.current != null && !state.isSaving,
-                modifier = Modifier.size(48.dp)
+            val applyLabel = localizedStringOr("desktop_apply_wallpaper", "Apply Wallpaper")
+            Surface(
+                onClick = { applyDialogVisible = true },
+                enabled = state.current != null && !state.isApplying,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(56.dp)
+                    .onGloballyPositioned { applyAnchorX = it.boundsInWindow().center.x }
+                    .semantics { contentDescription = applyLabel }
             ) {
-                if (state.isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Rounded.Save,
-                        contentDescription = localizedStringOr("desktop_save_png", "Save PNG"),
-                        tint = if (state.current != null) Color.White else Color.White.copy(alpha = 0.3f)
-                    )
+                Box(contentAlignment = Alignment.Center) {
+                    if (state.isApplying || state.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        ThickCheck(
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
                 }
             }
 
@@ -366,102 +341,130 @@ private fun MediaControls(
             }
         }
     }
+
+    ApplyDialog(
+        visible = applyDialogVisible,
+        anchorCenterXPx = applyAnchorX,
+        state = state,
+        controller = controller,
+        onDismiss = { applyDialogVisible = false }
+    )
 }
 
+/** Thick, round-capped checkmark used on the circular apply button. */
 @Composable
-private fun ApplyMenu(
-    expanded: Boolean,
+private fun ThickCheck(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val stroke = size.minDimension * 0.17f
+        val elbow = Offset(size.width * 0.42f, size.height * 0.76f)
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.18f, size.height * 0.52f),
+            end = elbow,
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = elbow,
+            end = Offset(size.width * 0.84f, size.height * 0.26f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+/**
+ * Apply targets plus export, shown as an anchored modal centered on the apply button.
+ */
+@Composable
+private fun ApplyDialog(
+    visible: Boolean,
+    anchorCenterXPx: Float,
     state: StudioUiState,
     controller: StudioController,
     onDismiss: () -> Unit
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        Text(
-            text = localizedStringOr("desktop_apply_to", "Apply To"),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-        state.monitors.forEach { monitor ->
-            DropdownMenuItem(
-                text = {
-                    Column {
-                        Text(monitor.name)
-                        Text(
-                            text = "${monitor.widthPx}×${monitor.heightPx}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+    val monitors = state.monitors
+    val items = buildList {
+        monitors.forEach { monitor ->
+            add(
+                ChoiceItem(
+                    label = monitor.name,
+                    summary = buildString {
+                        append("${monitor.widthPx}×${monitor.heightPx}")
+                        if (monitor.isPrimary) {
+                            append(" · ")
+                            append(localizedStringOr("desktop_primary", "Primary"))
+                        }
                     }
-                },
-                leadingIcon = {
-                    Icon(Icons.Rounded.Monitor, contentDescription = null)
-                },
-                onClick = {
-                    controller.applyWallpaper(ApplyTarget.SELECTED_DISPLAY, monitor.id)
-                    onDismiss()
-                }
+                )
             )
         }
-        HorizontalDivider(
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        add(
+            ChoiceItem(
+                label = localizedStringOr("desktop_all_displays", "All Displays"),
+                summary = localizedStringOr(
+                    "desktop_apply_all_desc",
+                    "Same wallpaper on every display"
+                )
+            )
         )
-        DropdownMenuItem(
-            text = {
-                Column {
-                    Text(localizedStringOr("desktop_all_displays", "All Displays"))
-                    Text(
-                        text = localizedStringOr(
-                            "desktop_apply_all_desc",
-                            "Same wallpaper on every display"
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+        add(
+            ChoiceItem(
+                label = localizedStringOr(
+                    "desktop_apply_all_separate",
+                    "All Displays Separate"
+                ),
+                summary = if (state.backendInfo.supportsPerMonitor) {
+                    localizedStringOr(
+                        "desktop_apply_all_separate_desc",
+                        "A different wallpaper on each display"
                     )
-                }
-            },
-            leadingIcon = {
-                Icon(Icons.Rounded.Wallpaper, contentDescription = null)
-            },
-            onClick = {
-                controller.applyWallpaper(ApplyTarget.ALL_DISPLAYS)
-                onDismiss()
-            }
+                } else {
+                    localizedStringOr(
+                        "desktop_apply_all_separate_unsupported",
+                        "This backend applies one wallpaper to all displays"
+                    )
+                },
+                enabled = state.backendInfo.supportsPerMonitor
+            )
         )
-        DropdownMenuItem(
-            text = {
-                Column {
-                    Text(
-                        localizedStringOr(
-                            "desktop_apply_all_separate",
-                            "All Displays Separate"
-                        )
-                    )
-                    Text(
-                        text = if (state.backendInfo.supportsPerMonitor) {
-                            localizedStringOr(
-                                "desktop_apply_all_separate_desc",
-                                "A different wallpaper on each display"
-                            )
-                        } else {
-                            localizedStringOr(
-                                "desktop_apply_all_separate_unsupported",
-                                "This backend applies one wallpaper to all displays"
-                            )
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            leadingIcon = {
-                Icon(Icons.Rounded.GridView, contentDescription = null)
-            },
-            enabled = state.backendInfo.supportsPerMonitor,
-            onClick = {
-                controller.applyWallpaper(ApplyTarget.ALL_DISPLAYS_SEPARATE)
-                onDismiss()
-            }
+        add(
+            ChoiceItem(
+                label = localizedStringOr("desktop_save_wallpaper", "Save Wallpaper"),
+                summary = localizedStringOr(
+                    "desktop_save_wallpaper_desc",
+                    "Export PNG files for every display"
+                ),
+                enabled = state.current != null && !state.isSaving
+            )
         )
     }
+
+    AnchoredChoiceDialog(
+        visible = visible,
+        anchorCenterXPx = anchorCenterXPx,
+        title = localizedStringOr("desktop_apply_to", "Apply To"),
+        items = items,
+        onSelect = { index ->
+            when {
+                index < monitors.size ->
+                    controller.applyWallpaper(ApplyTarget.SELECTED_DISPLAY, monitors[index].id)
+
+                index == monitors.size ->
+                    controller.applyWallpaper(ApplyTarget.ALL_DISPLAYS)
+
+                index == monitors.size + 1 ->
+                    controller.applyWallpaper(ApplyTarget.ALL_DISPLAYS_SEPARATE)
+
+                else -> controller.savePngs(ApplyTarget.ALL_DISPLAYS)
+            }
+            onDismiss()
+        },
+        onDismiss = onDismiss
+    )
 }

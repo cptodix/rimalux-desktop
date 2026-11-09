@@ -110,6 +110,8 @@
     <string name="desktop_randomize">Acak</string>
     <string name="desktop_apply_wallpaper">Terapkan Wallpaper</string>
     <string name="desktop_save_png">Simpan PNG</string>
+    <string name="desktop_save_wallpaper">Simpan Wallpaper</string>
+    <string name="desktop_save_wallpaper_desc">Ekspor berkas PNG untuk setiap layar</string>
     <string name="desktop_save_all_png">Simpan Semua Layar</string>
     <string name="desktop_preview_all">Pratinjau Semua</string>
     <string name="desktop_preview_selected">Pratinjau Terpilih</string>

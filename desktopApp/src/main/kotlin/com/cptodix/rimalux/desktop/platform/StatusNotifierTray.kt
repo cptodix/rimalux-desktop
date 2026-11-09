@@ -512,7 +512,7 @@ internal class StatusNotifierTray(
 
         private fun load(): List<IconPixmapStruct> {
             val source = runCatching {
-                StatusNotifierTray::class.java.getResourceAsStream("/icons/rimalux.png")
+                StatusNotifierTray::class.java.getResourceAsStream("/icons/tray.png")
                     ?.use { ImageIO.read(it) }
             }.getOrNull() ?: return emptyList()
 

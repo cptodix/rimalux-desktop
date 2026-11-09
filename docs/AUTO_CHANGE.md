@@ -64,6 +64,8 @@ Target displays are stored in `DisplaySettings.targetMonitorIds` (empty = all di
   - The item exports `IconPixmap` (the app icon, ARGB32) so Plasma always has a visible icon,
     and bound properties are declared on the DBus interface so `org.freedesktop.DBus.Properties`
     can read them.
+  - The icon asset is `desktopApp/src/main/resources/icons/tray.png` (rasterised from the
+    tray SVG) and is shared with the AWT/Windows tray.
   - The context menu is a `com.canonical.dbusmenu` object at `/MenuBar`, referenced by the
     item’s `Menu` property. Plasma renders it with its own native menu styling; the AWT popup is
     only a fallback for hosts that call `ContextMenu` instead.
