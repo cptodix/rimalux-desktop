@@ -82,7 +82,6 @@ compose.desktop {
                 debMaintainer = "cptodix@users.noreply.github.com"
                 appCategory = "Graphics"
                 menuGroup = "Graphics"
-                rpmLicenseType = "GPL-3.0-only"
                 shortcut = true
                 iconFile.set(project.file("packaging/rimalux.png"))
             }

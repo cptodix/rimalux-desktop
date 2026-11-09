@@ -12,6 +12,9 @@ local.properties
 Thumbs.db
 *.swp
 
+# OpenCode local config
+.opencode/
+
 # Logs and local runtime data
 *.log
 hs_err_pid*

@@ -564,10 +564,6 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = "${localizedStringOr("desktop_license", "License")}: GPL-3.0",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
                     text = localizedStringOr(
                         "desktop_shortcuts",
                         "Keyboard Shortcuts"

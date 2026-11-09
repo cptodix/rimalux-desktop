@@ -133,9 +133,3 @@ rimalux-desktop/
 | [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | Detailed agentic checklist |
 | [`docs/VERIFICATION.md`](docs/VERIFICATION.md) | Phase 0/1 verification log |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Architecture decision records |
-
-## License
-
-GPL-3.0. The engine and design language originate from the Android Rimalux project by
-Cptodix Studio, which is licensed under GPL-3.0; this desktop port remains under the same
-license. The GPL-3.0 text is available at <https://www.gnu.org/licenses/gpl-3.0.html>.

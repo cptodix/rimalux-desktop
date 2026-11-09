@@ -168,7 +168,7 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 - Displays list with per-monitor resolution and an Identify action.
 - Folder shortcuts in a two-column grid with icons.
 - Background scheduler, support (updates + diagnostics), about, version, engine commit,
-  license, shortcuts.
+  shortcuts.
 
 ## Terminology
 

@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -353,7 +353,7 @@ private fun OptionsLeftPane(
                     summary = patternsSummary,
                     selected = page == OptionsPage.PATTERNS,
                     trailingIcon = if (page == OptionsPage.PATTERNS) {
-                        Icons.AutoMirrored.Rounded.ArrowBack
+                        Icons.AutoMirrored.Rounded.KeyboardArrowLeft
                     } else {
                         Icons.AutoMirrored.Rounded.KeyboardArrowRight
                     },
@@ -395,7 +395,7 @@ private fun OptionsLeftPane(
                     summary = paletteSummary,
                     selected = page == OptionsPage.COLORS,
                     trailingIcon = if (page == OptionsPage.COLORS) {
-                        Icons.AutoMirrored.Rounded.ArrowBack
+                        Icons.AutoMirrored.Rounded.KeyboardArrowLeft
                     } else {
                         Icons.AutoMirrored.Rounded.KeyboardArrowRight
                     },
@@ -449,7 +449,7 @@ private fun OptionsLeftPane(
                 ),
                 selected = page == OptionsPage.SETTINGS,
                 trailingIcon = if (page == OptionsPage.SETTINGS) {
-                    Icons.AutoMirrored.Rounded.ArrowBack
+                    Icons.AutoMirrored.Rounded.KeyboardArrowLeft
                 } else {
                     Icons.AutoMirrored.Rounded.KeyboardArrowRight
                 },
