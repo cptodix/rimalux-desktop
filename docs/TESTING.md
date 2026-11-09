@@ -57,6 +57,9 @@ Run all:
 - **`StatusNotifierTrayTest`**
   - On a session bus, installs the SNI tray, registers it with
     `org.kde.StatusNotifierWatcher`, and verifies that `Activate` invokes the open callback.
+  - Verifies `org.freedesktop.DBus.Properties` exposes `IconPixmap`/`Menu`, that
+    `com.canonical.dbusmenu.GetLayout` returns the four native menu entries, and that menu
+    `clicked` events drive open and the auto-change toggle.
 
 - **`StudioControllerAutoChangeTest`**
   - Fake clock + fake backend; due rotation generates and applies a new set and advances

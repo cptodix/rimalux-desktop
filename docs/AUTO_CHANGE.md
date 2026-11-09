@@ -61,6 +61,12 @@ Target displays are stored in `DisplaySettings.targetMonitorIds` (empty = all di
 
 - Linux/KDE: native **StatusNotifierItem** over DBus (`StatusNotifierTray`). AWT’s XEmbed tray
   icon appears on Plasma Wayland but does not receive click events, so it is only a fallback.
+  - The item exports `IconPixmap` (the app icon, ARGB32) so Plasma always has a visible icon,
+    and bound properties are declared on the DBus interface so `org.freedesktop.DBus.Properties`
+    can read them.
+  - The context menu is a `com.canonical.dbusmenu` object at `/MenuBar`, referenced by the
+    item’s `Menu` property. Plasma renders it with its own native menu styling; the AWT popup is
+    only a fallback for hosts that call `ContextMenu` instead.
 - Windows: AWT `SystemTray` (`AwtTray`).
 - Left click: open/focus the Rimalux window.
 - Right-click context menu:

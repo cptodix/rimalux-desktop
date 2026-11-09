@@ -196,6 +196,12 @@ See [`docs/LINUX_WALLPAPER_BACKENDS.md`](docs/LINUX_WALLPAPER_BACKENDS.md) and
 - Auto-change runs in a tray-resident app, or via an optional OS scheduler.
 - Linux/KDE tray uses a native `StatusNotifierItem` over DBus; AWT `SystemTray` is the
   Windows/fallback path. Do not revert to Compose `Tray` or AWT-only on Linux.
+- The SNI item must keep exporting bound properties on the DBus interface (not the
+  implementation class) or `org.freedesktop.DBus.Properties` fails and the icon disappears.
+  Ship `IconPixmap` from the app icon as the reliable source.
+- The context menu is a `com.canonical.dbusmenu` object referenced by the item's `Menu`
+  property, so the desktop draws a native menu. Do not replace it with a Swing/AWT popup on
+  Linux.
 - `nextRunEpochMillis` and `lastRunEpochMillis` are persisted in settings.
 - Enforce a dedupe window of `max(30s, interval * 3/4)` so startup + timer + wake do not double-rotate.
 - On startup/wake, if `nextRun` is overdue, rotate once and then schedule the next interval.
