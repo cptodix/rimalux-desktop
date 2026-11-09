@@ -46,6 +46,21 @@ tasks.test {
 }
 
 val packagingJdk = providers.environmentVariable("RIMALUX_PACKAGING_JDK").orNull
+val appVersion = providers.gradleProperty("appVersion").orElse("0.1.0")
+
+val generateAppVersion by tasks.registering {
+    val version = appVersion
+    val outputDir = layout.buildDirectory.dir("generated/appVersion")
+    inputs.property("appVersion", version)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("app-version.txt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(version.get())
+    }
+}
+
+sourceSets["main"].resources.srcDir(generateAppVersion)
 
 compose.desktop {
     application {
@@ -60,7 +75,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.Msi, TargetFormat.Exe)
             packageName = "Rimalux"
-            packageVersion = providers.gradleProperty("appVersion").orElse("0.1.0").get()
+            packageVersion = appVersion.get()
             description = "Procedural OLED wallpaper studio"
             vendor = "Cptodix Studio"
             copyright = "© 2026 Cptodix Studio"

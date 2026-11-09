@@ -92,28 +92,46 @@ Cross-compilation is not supported by jpackage. Use the CI matrix.
 - Keep the Windows `upgradeUuid` constant across releases.
 - Update `CHANGELOG.md`.
 
-## CI matrix
+## CI release workflow
 
-The repository ships two workflows:
+The repository ships a single workflow, `.github/workflows/release.yml`, triggered manually
+from the Actions tab (**Run workflow**). It never runs on push or pull request.
 
-- `.github/workflows/build.yml` — manual dispatch only. Tests on Ubuntu, packages DEB/RPM on
-  Linux, packages EXE/MSI on Windows, uploads artifacts.
-- `.github/workflows/release.yml` — manual dispatch only (requires a release tag input). Builds
-  Linux and Windows installers and attaches them to the GitHub release.
+Inputs:
 
-Neither workflow runs on push or pull request; start them from the Actions tab with
-**Run workflow**.
+- `bump` — `patch` (default), `minor`, or `major`.
+- `prerelease` — mark the GitHub release as a prerelease.
 
-Steps in the build workflow:
+What it does:
 
-1. Checkout.
-2. Set up JDK 21 (Temurin).
-3. Set up Gradle.
-4. `./gradlew test`.
-5. Linux: install `rpm`, build `packageDeb` and `packageRpm` with
-   `RIMALUX_PACKAGING_JDK=$JAVA_HOME`.
-6. Windows: install WiX (best-effort), build `packageExe` and `packageMsi`.
-7. Upload artifacts.
+1. **prepare** — checks out `main`, runs `./gradlew test`, reads `appVersion` from
+   `gradle.properties`, increments it, commits the bump, creates the `v<version>` tag, and pushes
+   both the commit and the tag.
+2. **linux** — checks out the new tag, installs `rpm`, and builds `packageDeb` + `packageRpm`
+   with `RIMALUX_PACKAGING_JDK=$JAVA_HOME`.
+3. **windows** — checks out the new tag, installs WiX (best-effort), and builds `packageExe`
+   and `packageMsi`.
+4. **publish** — downloads both artifact sets and publishes the GitHub release at the new tag
+   (marked latest).
+
+Release asset names use:
+
+```text
+rimalux_desktop_<version>_<YYYYMMDD>.<ext>
+```
+
+for example `rimalux_desktop_0.1.1_20261109.rpm`, `.deb`, `.exe`, `.msi`. The installed
+application/executable keeps the stable name `Rimalux`.
+
+Version source of truth:
+
+- `gradle.properties` → `appVersion=…` (bumped by the workflow).
+- `desktopApp/build.gradle.kts` → `packageVersion = appVersion`.
+- The build generates `app-version.txt` into the app resources, and `BuildInfo.VERSION` reads it,
+  so the About card, diagnostics, update check, and `--version` all match the tag.
+
+The workflow needs `contents: write` and a `main` branch that allows the bot push. On protected
+branches, allow `github-actions[bot]` to push or run the workflow from an unprotected branch.
 
 Windows MSI packaging is marked best-effort in CI because the WiX toolchain and interactive
 desktop availability vary between runners. Treat a missing MSI as a CI warning, not a code
