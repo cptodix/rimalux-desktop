@@ -1,7 +1,14 @@
 package com.cptodix.rimalux.desktop.ui.components
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -36,8 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -147,12 +152,14 @@ fun AnchoredChoiceDialog(
     onDismiss: () -> Unit,
     anchorTopPx: Float? = null,
     showCancel: Boolean = true,
-    separatorBeforeIndex: Int? = null
+    separatorBeforeIndex: Int? = null,
+    expandVertically: Boolean = false
 ) {
     AnchoredDialog(
         visible = visible,
         anchorCenterXPx = anchorCenterXPx,
         anchorTopPx = anchorTopPx,
+        expandVertically = expandVertically,
         onDismiss = onDismiss
     ) {
         Text(
@@ -232,8 +239,9 @@ fun AnchoredChoiceDialog(
 /**
  * A dialog whose horizontal center is aligned with the triggering row.
  *
- * When [anchorTopPx] is set the dialog sits directly above that y coordinate and grows upward
- * from its bottom edge; otherwise it is centered vertically.
+ * When [anchorTopPx] is set the dialog sits directly above that y coordinate. With
+ * [expandVertically] it grows from zero height to its final height, anchored on its bottom edge,
+ * and shrinks back the same way when dismissed.
  */
 @Composable
 fun AnchoredDialog(
@@ -241,23 +249,18 @@ fun AnchoredDialog(
     anchorCenterXPx: Float,
     onDismiss: () -> Unit,
     anchorTopPx: Float? = null,
+    expandVertically: Boolean = false,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
 ) {
-    if (!visible) return
+    val transition = remember { MutableTransitionState(false) }
+    LaunchedEffect(visible) { transition.targetState = visible }
+    if (!visible && transition.isIdle && !transition.currentState) return
 
     var clickOutsideGuard by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(180)
         clickOutsideGuard = true
     }
-
-    var appeared by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { appeared = true }
-    val progress by animateFloatAsState(
-        targetValue = if (appeared) 1f else 0f,
-        animationSpec = tween(170),
-        label = "anchored_dialog"
-    )
 
     Popup(
         popupPositionProvider = remember {
@@ -312,44 +315,50 @@ fun AnchoredDialog(
                 maxHeight - 32.dp
             }
 
-            Surface(
+            AnimatedVisibility(
+                visibleState = transition,
+                enter = if (expandVertically) {
+                    expandVertically(
+                        expandFrom = Alignment.Bottom,
+                        animationSpec = tween(220)
+                    ) + fadeIn(tween(120))
+                } else {
+                    fadeIn(tween(170)) + scaleIn(tween(170), initialScale = 0.94f)
+                },
+                exit = if (expandVertically) {
+                    shrinkVertically(
+                        shrinkTowards = Alignment.Bottom,
+                        animationSpec = tween(180)
+                    ) + fadeOut(tween(100))
+                } else {
+                    fadeOut(tween(140)) + scaleOut(tween(140), targetScale = 0.96f)
+                },
                 modifier = Modifier
                     .align(if (aboveAnchor) Alignment.BottomCenter else Alignment.Center)
                     .offset { IntOffset(offsetPx.roundToInt(), verticalOffset) }
-                    .width(dialogWidth)
-                    .heightIn(max = maxDialogHeight)
-                    .graphicsLayer {
-                        alpha = progress
-                        val scale = if (aboveAnchor) {
-                            0.86f + 0.14f * progress
-                        } else {
-                            0.94f + 0.06f * progress
-                        }
-                        scaleX = scale
-                        scaleY = scale
-                        transformOrigin = if (aboveAnchor) {
-                            TransformOrigin(0.5f, 1f)
-                        } else {
-                            TransformOrigin.Center
-                        }
-                    }
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    ),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp,
-                shadowElevation = 28.dp
             ) {
-                Column(
+                Surface(
                     modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                        .padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    content = content
-                )
+                        .width(dialogWidth)
+                        .heightIn(max = maxDialogHeight)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
+                        ),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 6.dp,
+                    shadowElevation = 28.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .padding(22.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        content = content
+                    )
+                }
             }
         }
     }

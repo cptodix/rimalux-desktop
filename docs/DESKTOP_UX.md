@@ -40,9 +40,10 @@ persistent settings panel.
 
 ### Apply To modal
 
-Pressing Apply opens the anchored modal directly above the apply button. It grows upward from
-its bottom edge, has no cancel/close row, and closes on selection or a click outside. A divider
-separates the apply targets from **Save Wallpaper**.
+Pressing Apply opens the anchored modal directly above the apply button. It expands vertically
+from zero height to its full height (bottom edge anchored), shrinks back on close, has no
+cancel/close row, and closes on selection or a click outside. A divider separates the apply
+targets from **Save Wallpaper**.
 
 - Every detected display, with its native resolution (primary marked).
 - **All Displays** — the current preview design rendered at every display’s resolution.
@@ -129,7 +130,8 @@ Selecting **Patterns** or **Colors** animates the modal wider to the right:
 - Clicking the active row again collapses the right pane.
 - Clicking outside the modal dismisses it.
 - `Esc` dismisses the modal.
-- The modal animates in from the bottom and slides/fades out on close.
+- The modal expands vertically from zero height to its full height, anchored on its bottom edge,
+  and shrinks back the same way on close.
 
 ### Quick popups
 

@@ -108,14 +108,15 @@ See [`docs/ENGINE_SYNC.md`](docs/ENGINE_SYNC.md).
    - Bottom media-player controls: options (left), previous / apply / next (center). The apply
      button is circular with a thick checkmark.
    - Apply opens the anchored modal (same style as the Pattern Layout picker) directly above the
-     button, growing upward, with each display, **All Displays** (same design on every display),
-     **All Displays Separate** (a distinct design per display), and **Save Wallpaper** (PNG
-     export) below a divider. It has no cancel/close row.
+     button, expanding vertically from zero height, with each display, **All Displays** (same
+     design on every display), **All Displays Separate** (a distinct design per display), and
+     **Save Wallpaper** (PNG export) below a divider. It has no cancel/close row.
    - A small floating pill above the bottom controls shows the pattern name, palette dots,
      and measured True Black percentage.
    - The options button opens a modal styled like the Android settings sheet. The modal floats
-     above the bottom controls and animates in/out from the bottom. Selecting Patterns or
-     Colors expands the modal to the right like a tablet; the left sheet remains visible.
+     above the bottom controls and expands/collapses vertically (zero height to full height,
+     bottom edge anchored). Selecting Patterns or Colors expands the modal to the right like a
+     tablet; the left sheet remains visible.
    - The options modal has no title row, no close button, and no back button; dismiss by
      clicking outside, `Esc`, or the active row. Do not tint the whole app with a scrim; the
      modal floats on a shadow. The left sheet keeps the same width when a page opens.

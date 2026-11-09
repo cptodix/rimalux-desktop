@@ -2,8 +2,14 @@
 
 package com.cptodix.rimalux.desktop.ui.options
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +46,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,9 +89,14 @@ fun OptionsModal(
     state: StudioUiState,
     controller: StudioController,
     page: OptionsPage,
+    visible: Boolean,
     onPageChange: (OptionsPage) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val transition = remember { MutableTransitionState(false) }
+    LaunchedEffect(visible) { transition.targetState = visible }
+    if (!visible && transition.isIdle && !transition.currentState) return
+
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -105,60 +117,73 @@ fun OptionsModal(
                 label = "options_modal_width"
             )
 
-            Surface(
+            AnimatedVisibility(
+                visibleState = transition,
+                enter = expandVertically(
+                    expandFrom = Alignment.Bottom,
+                    animationSpec = tween(240)
+                ) + fadeIn(tween(140)),
+                exit = shrinkVertically(
+                    shrinkTowards = Alignment.Bottom,
+                    animationSpec = tween(200)
+                ) + fadeOut(tween(120)),
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 104.dp)
-                    .width(panelWidth)
-                    .height(panelHeight)
-                    .clickable(
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    ),
-                shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                tonalElevation = 0.dp,
-                shadowElevation = 24.dp,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
             ) {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    OptionsLeftPane(
-                        state = state,
-                        controller = controller,
-                        page = page,
-                        onPageChange = onPageChange,
-                        modifier = Modifier
-                            .width(minOf(430.dp, panelWidth))
-                            .fillMaxHeight()
-                    )
-
-                    if (page != OptionsPage.NONE) {
-                        Box(
+                Surface(
+                    modifier = Modifier
+                        .width(panelWidth)
+                        .height(panelHeight)
+                        .clickable(
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
+                        ),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 24.dp,
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+                ) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        OptionsLeftPane(
+                            state = state,
+                            controller = controller,
+                            page = page,
+                            onPageChange = onPageChange,
                             modifier = Modifier
-                                .weight(1f)
+                                .width(minOf(430.dp, panelWidth))
                                 .fillMaxHeight()
-                        ) {
-                            when (page) {
-                                OptionsPage.PATTERNS -> PatternsScreen(
-                                    state = state,
-                                    controller = controller,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                        )
 
-                                OptionsPage.COLORS -> ColorsScreen(
-                                    state = state,
-                                    controller = controller,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                        if (page != OptionsPage.NONE) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                            ) {
+                                when (page) {
+                                    OptionsPage.PATTERNS -> PatternsScreen(
+                                        state = state,
+                                        controller = controller,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
 
-                                OptionsPage.SETTINGS -> SettingsScreen(
-                                    state = state,
-                                    controller = controller,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                    OptionsPage.COLORS -> ColorsScreen(
+                                        state = state,
+                                        controller = controller,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
 
-                                OptionsPage.NONE -> Unit
+                                    OptionsPage.SETTINGS -> SettingsScreen(
+                                        state = state,
+                                        controller = controller,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+
+                                    OptionsPage.NONE -> Unit
+                                }
                             }
                         }
                     }

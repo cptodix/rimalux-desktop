@@ -460,6 +460,7 @@ private fun ApplyDialog(
         anchorTopPx = anchorTopPx,
         showCancel = false,
         separatorBeforeIndex = monitors.size + 2,
+        expandVertically = true,
         onSelect = { index ->
             when {
                 index < monitors.size ->

@@ -1,11 +1,5 @@
 package com.cptodix.rimalux.desktop.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -61,28 +55,17 @@ fun RimaluxDesktopApp(
             modifier = Modifier.fillMaxSize()
         )
 
-        AnimatedVisibility(
+        OptionsModal(
+            state = state,
+            controller = controller,
+            page = optionsPage,
             visible = optionsOpen && !fullscreen,
-            enter = slideInVertically(
-                initialOffsetY = { it },
-                animationSpec = tween(280)
-            ) + fadeIn(tween(180)),
-            exit = slideOutVertically(
-                targetOffsetY = { it },
-                animationSpec = tween(220)
-            ) + fadeOut(tween(160))
-        ) {
-            OptionsModal(
-                state = state,
-                controller = controller,
-                page = optionsPage,
-                onPageChange = onOptionsPageChange,
-                onDismiss = {
-                    onOptionsOpenChange(false)
-                    onOptionsPageChange(OptionsPage.NONE)
-                }
-            )
-        }
+            onPageChange = onOptionsPageChange,
+            onDismiss = {
+                onOptionsOpenChange(false)
+                onOptionsPageChange(OptionsPage.NONE)
+            }
+        )
 
         state.identifyMonitorId?.let { id ->
             state.monitors.firstOrNull { it.id == id }?.let { monitor ->
