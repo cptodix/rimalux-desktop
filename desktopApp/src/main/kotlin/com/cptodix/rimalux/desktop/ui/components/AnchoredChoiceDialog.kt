@@ -349,7 +349,7 @@ fun AnchoredDialog(
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     tonalElevation = 6.dp,
-                    shadowElevation = 28.dp
+                    shadowElevation = 12.dp
                 ) {
                     Column(
                         modifier = Modifier

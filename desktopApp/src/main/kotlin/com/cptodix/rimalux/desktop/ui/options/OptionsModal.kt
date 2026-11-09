@@ -143,7 +143,7 @@ fun OptionsModal(
                     shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     tonalElevation = 0.dp,
-                    shadowElevation = 24.dp,
+                    shadowElevation = 8.dp,
                     border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
                 ) {
                     Row(modifier = Modifier.fillMaxSize()) {
