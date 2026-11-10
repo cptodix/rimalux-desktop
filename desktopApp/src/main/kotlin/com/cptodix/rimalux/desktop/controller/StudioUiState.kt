@@ -11,6 +11,7 @@ import com.cptodix.rimalux.desktop.model.MonitorInfo
 import com.cptodix.rimalux.desktop.model.UiSettings
 import com.cptodix.rimalux.desktop.model.WallpaperItem
 import com.cptodix.rimalux.desktop.model.WallpaperSet
+import com.cptodix.rimalux.desktop.platform.UpdateInfo
 import com.cptodix.rimalux.oled.wallpaper.engine.ColorPalette
 import com.cptodix.rimalux.oled.wallpaper.engine.StarterPalettes
 import com.cptodix.rimalux.oled.wallpaper.engine.SynthesizedWallpaper
@@ -57,7 +58,10 @@ data class StudioUiState(
     val aheadReadyCount: Int = 0,
     val osSchedulerInstalled: Boolean = false,
     val identifyMonitorId: String? = null,
-    val previewError: String? = null
+    val previewError: String? = null,
+    val updateInfo: UpdateInfo? = null,
+    val isInstallingUpdate: Boolean = false,
+    val exitRequested: Boolean = false
 ) {
     val selectedMonitor: MonitorInfo?
         get() = monitors.firstOrNull { it.id == selectedMonitorId }

@@ -25,6 +25,8 @@ import com.cptodix.rimalux.desktop.platform.OsScheduler
 import com.cptodix.rimalux.desktop.platform.PlatformPaths
 import com.cptodix.rimalux.desktop.platform.ProcessRunner
 import com.cptodix.rimalux.desktop.platform.UpdateChecker
+import com.cptodix.rimalux.desktop.platform.UpdateInstallResult
+import com.cptodix.rimalux.desktop.platform.UpdateInstaller
 import com.cptodix.rimalux.desktop.platform.WallpaperBackend
 import com.cptodix.rimalux.desktop.platform.WallpaperBackendFactory
 import com.cptodix.rimalux.desktop.platform.WallpaperFileStore
@@ -74,6 +76,7 @@ class StudioController(
     private val autostartManager: AutostartManager = AutostartManager(paths),
     private val osScheduler: OsScheduler = OsScheduler(paths, runner),
     private val updateChecker: UpdateChecker = UpdateChecker(),
+    private val updateInstaller: UpdateInstaller = UpdateInstaller(),
     private val backendOverride: WallpaperBackend? = null,
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -1516,25 +1519,60 @@ class StudioController(
         }
     }
 
-    fun checkForUpdates() {
+    fun checkForUpdates(silent: Boolean = false) {
         scope.launch {
-            postStatus(UiMessage("desktop_update_checking"))
+            if (!silent) postStatus(UiMessage("desktop_update_checking"))
             updateChecker.check().onSuccess { info ->
-                postStatus(
-                    if (info.updateAvailable) {
-                        UiMessage("desktop_update_available", listOf(info.latestVersion))
-                    } else {
-                        UiMessage("desktop_update_current", listOf(info.currentVersion))
-                    }
-                )
+                _uiState.update { it.copy(updateInfo = info) }
+                if (info.updateAvailable) {
+                    postStatus(UiMessage("desktop_update_available", listOf(info.latestVersion)))
+                } else if (!silent) {
+                    postStatus(UiMessage("desktop_update_current", listOf(info.currentVersion)))
+                }
             }.onFailure { error ->
-                postStatus(
-                    UiMessage(
-                        "desktop_update_failed",
-                        listOf(error.localizedMessage ?: "Unknown error")
+                if (!silent) {
+                    postStatus(
+                        UiMessage(
+                            "desktop_update_failed",
+                            listOf(error.localizedMessage ?: "Unknown error")
+                        )
                     )
-                )
+                }
             }
+        }
+    }
+
+    /** Downloads the latest release and hands over to it (AppImage / Windows installer). */
+    fun installUpdate() {
+        val info = _uiState.value.updateInfo ?: return
+        if (!info.updateAvailable || _uiState.value.isInstallingUpdate) return
+        scope.launch {
+            _uiState.update { it.copy(isInstallingUpdate = true) }
+            postStatus(UiMessage("desktop_update_downloading", listOf(info.latestVersion)))
+            updateInstaller.install(info)
+                .onSuccess { result ->
+                    when (result) {
+                        UpdateInstallResult.Restarting -> {
+                            postStatus(UiMessage("desktop_update_restarting"))
+                            delay(1200)
+                            _uiState.update { it.copy(exitRequested = true) }
+                        }
+
+                        is UpdateInstallResult.Manual ->
+                            postStatus(
+                                UiMessage("desktop_update_manual", listOf(result.releaseUrl))
+                            )
+                    }
+                }
+                .onFailure { error ->
+                    postStatus(
+                        UiMessage(
+                            "desktop_update_failed",
+                            listOf(error.localizedMessage ?: "Unknown error")
+                        )
+                    )
+                }
+            _uiState.update { it.copy(isInstallingUpdate = false) }
         }
     }
 

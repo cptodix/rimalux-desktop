@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -524,7 +525,7 @@ fun SettingsScreen(
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
-                        onClick = controller::checkForUpdates,
+                        onClick = { controller.checkForUpdates() },
                         shape = MaterialTheme.shapes.medium
                     ) {
                         Text(localizedStringOr("desktop_check_updates", "Check for Updates"))
@@ -534,6 +535,41 @@ fun SettingsScreen(
                         shape = MaterialTheme.shapes.medium
                     ) {
                         Text(localizedStringOr("desktop_export_diagnostics", "Export Diagnostics"))
+                    }
+                }
+                state.updateInfo?.let { update ->
+                    Text(
+                        text = localizedStringOr(
+                            "desktop_update_versions",
+                            "Installed ${update.currentVersion} · Latest ${update.latestVersion}",
+                            update.currentVersion,
+                            update.latestVersion
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (update.updateAvailable) {
+                        Button(
+                            onClick = controller::installUpdate,
+                            enabled = !state.isInstallingUpdate,
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            if (state.isInstallingUpdate) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            } else {
+                                Text(
+                                    localizedStringOr(
+                                        "desktop_install_update",
+                                        "Install Update ${update.latestVersion}",
+                                        update.latestVersion
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
                 Text(

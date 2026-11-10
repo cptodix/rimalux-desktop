@@ -229,6 +229,14 @@ fun main(args: Array<String>) {
                 showWindow()
             }
         }
+        LaunchedEffect(state.exitRequested) {
+            if (state.exitRequested) {
+                quitApp()
+            }
+        }
+        LaunchedEffect(Unit) {
+            controller.checkForUpdates(silent = true)
+        }
         LaunchedEffect(trayLabels, state.autoChange.enabled) {
             val current = tray
             if (current == null) {

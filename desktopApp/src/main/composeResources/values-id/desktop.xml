@@ -35,6 +35,11 @@
     <string name="desktop_update_available">Pembaruan tersedia: %1$s</string>
     <string name="desktop_update_current">Rimalux Desktop sudah terbaru (%1$s)</string>
     <string name="desktop_update_failed">Pemeriksaan pembaruan gagal: %1$s</string>
+    <string name="desktop_update_versions">Terpasang %1$s · Terbaru %2$s</string>
+    <string name="desktop_install_update">Pasang Pembaruan %1$s</string>
+    <string name="desktop_update_downloading">Mengunduh pembaruan %1$s…</string>
+    <string name="desktop_update_restarting">Pembaruan terpasang. Memulai ulang…</string>
+    <string name="desktop_update_manual">Pemasangan otomatis tidak tersedia. Unduh: %1$s</string>
     <string name="desktop_os_scheduler">Penjadwal Latar Belakang</string>
     <string name="desktop_os_scheduler_on">Terpasang — berotasi meski Rimalux ditutup.</string>
     <string name="desktop_os_scheduler_off">Belum terpasang — penjadwal tray dalam aplikasi digunakan.</string>

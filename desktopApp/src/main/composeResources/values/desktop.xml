@@ -35,6 +35,11 @@
     <string name="desktop_update_available">Update available: %1$s</string>
     <string name="desktop_update_current">Rimalux Desktop is up to date (%1$s)</string>
     <string name="desktop_update_failed">Update check failed: %1$s</string>
+    <string name="desktop_update_versions">Installed %1$s · Latest %2$s</string>
+    <string name="desktop_install_update">Install Update %1$s</string>
+    <string name="desktop_update_downloading">Downloading update %1$s…</string>
+    <string name="desktop_update_restarting">Update installed. Restarting…</string>
+    <string name="desktop_update_manual">Automatic install is not available. Download: %1$s</string>
     <string name="desktop_os_scheduler">Background Scheduler</string>
     <string name="desktop_os_scheduler_on">Installed — rotates even when Rimalux is closed.</string>
     <string name="desktop_os_scheduler_off">Not installed — the in-app tray scheduler is used.</string>

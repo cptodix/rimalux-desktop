@@ -12,11 +12,17 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+data class UpdateAsset(
+    val name: String,
+    val downloadUrl: String
+)
+
 data class UpdateInfo(
     val currentVersion: String,
     val latestVersion: String,
     val releaseUrl: String,
-    val updateAvailable: Boolean
+    val updateAvailable: Boolean,
+    val assets: List<UpdateAsset> = emptyList()
 )
 
 /**
@@ -62,7 +68,12 @@ class UpdateChecker(
                 currentVersion = currentVersion,
                 latestVersion = latest,
                 releaseUrl = release.htmlUrl,
-                updateAvailable = isNewer(latest, currentVersion)
+                updateAvailable = isNewer(latest, currentVersion),
+                assets = release.assets.mapNotNull { asset ->
+                    val url = asset.downloadUrl.takeIf { it.isNotBlank() }
+                    val name = asset.name.takeIf { it.isNotBlank() }
+                    if (url != null && name != null) UpdateAsset(name, url) else null
+                }
             )
         }
     }
@@ -100,5 +111,12 @@ private data class GitHubRelease(
     @SerialName("html_url") val htmlUrl: String = "",
     val name: String = "",
     val prerelease: Boolean = false,
-    val draft: Boolean = false
+    val draft: Boolean = false,
+    val assets: List<GitHubAsset> = emptyList()
+)
+
+@Serializable
+private data class GitHubAsset(
+    val name: String = "",
+    @SerialName("browser_download_url") val downloadUrl: String = ""
 )

@@ -71,6 +71,10 @@ Run all:
 - **`UpdateCheckerTest`**
   - Dotted version comparison and pre-release handling.
 
+- **`UpdateInstallerTest`**
+  - Picks the `.exe` asset for Windows and the `.AppImage` asset for Linux, and returns no asset
+    for platforms that must update manually.
+
 - **`OsSchedulerTest`**
   - systemd service/timer content and interval clamping.
 
@@ -139,7 +143,8 @@ accepted by the user on 2026-11-07.
 5. [x] systemd unit content (`OsSchedulerTest`).
 6. [ ] Install/remove the systemd user timer on a real session.
 7. [ ] Windows `--test-backend` on Windows hardware.
-8. [ ] Windows MSI/EXE install and per-monitor apply.
+8. [ ] Windows EXE install and per-monitor apply.
+9. [ ] In-app update: AppImage self-replace/relaunch and Windows installer handoff.
 
 ## Manual GNOME checklist
 

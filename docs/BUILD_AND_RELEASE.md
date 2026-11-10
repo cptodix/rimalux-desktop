@@ -50,40 +50,57 @@ The default Android checkout is `../rimalux`. Override with:
 
 ## Packaging
 
-### Linux
-
-```bash
-# Verified on openSUSE Tumbleweed with Temurin 21:
-RIMALUX_PACKAGING_JDK=/path/to/jdk-21 ./gradlew :desktopApp:packageRpm
-
-# Debian/Ubuntu host with dpkg-deb:
-RIMALUX_PACKAGING_JDK=/path/to/jdk-21 ./gradlew :desktopApp:packageDeb
-```
-
-Outputs:
+Releases ship exactly two assets:
 
 ```text
-desktopApp/build/compose/binaries/main/deb/*.deb
-desktopApp/build/compose/binaries/main/rpm/*.rpm
+rimalux_desktop_<version>_<YYYYMMDD>.AppImage   Linux (x86_64)
+rimalux_desktop_<version>_<YYYYMMDD>.exe        Windows installer
 ```
 
-### Windows
+### Linux (AppImage)
 
-Run on Windows:
+CI builds the jpackage app-image and wraps it with `appimagetool`:
+
+```bash
+export RIMALUX_PACKAGING_JDK=/path/to/jdk-21
+./gradlew :desktopApp:createDistributable
+
+# AppDir/usr <- desktopApp/build/compose/binaries/main/app/Rimalux/
+# AppDir/rimalux.desktop, AppDir/rimalux.png, AppDir/AppRun
+ARCH=x86_64 appimagetool --appimage-extract-and-run --no-appstream AppDir rimalux.AppImage
+```
+
+The AppImage bundles its own runtime, so it needs no system Java. DEB/RPM packaging still works
+locally (`packageDeb`, `packageRpm`) but is not published.
+
+### Windows (EXE installer)
 
 ```powershell
-.\gradlew.bat :desktopApp:packageMsi
 .\gradlew.bat :desktopApp:packageExe
 ```
 
-Outputs:
+Output: `desktopApp\build\compose\binaries\main\exe\*.exe`. It is a per-user installer
+(`perUserInstall = true`) and upgrades in place via the stable `upgradeUuid`. MSI packaging still
+works locally but is not published. Cross-compilation is not supported by jpackage.
 
-```text
-desktopApp\build\compose\binaries\main\msi\*.msi
-desktopApp\build\compose\binaries\main\exe\*.exe
-```
+### Install scripts
 
-Cross-compilation is not supported by jpackage. Use the CI matrix.
+- `scripts/install.sh` — resolves the latest release (or `RIMALUX_VERSION`), downloads the
+  AppImage to `~/.local/share/rimalux/rimalux.AppImage`, symlinks `~/.local/bin/rimalux`, writes
+  `~/.local/share/applications/rimalux.desktop`, and installs the icon.
+- `scripts/install.ps1` — resolves the latest release (or `RIMALUX_VERSION`), downloads the EXE
+  and runs it (`/quiet`, falling back to the interactive wizard).
+
+### In-app updates
+
+**Advanced Settings → Support → Check for Updates** reads the GitHub releases API and compares
+the tag with `BuildInfo.VERSION`. When a newer release exists, **Install Update**:
+
+- Linux AppImage: downloads the new AppImage next to the running one, replaces it atomically,
+  relaunches it, and exits. Requires `APPIMAGE` (set by the AppImage runtime).
+- Windows: downloads the EXE, starts a helper that waits for the app to exit, then runs the
+  installer with `/quiet`.
+- Dev runs and distro packages: shows the release URL instead of self-updating.
 
 ## Versioning
 
@@ -107,21 +124,14 @@ What it does:
 1. **prepare** — checks out `main`, runs `./gradlew test`, reads `appVersion` from
    `gradle.properties`, increments it, commits the bump, creates the `v<version>` tag, and pushes
    both the commit and the tag.
-2. **linux** — checks out the new tag, installs `rpm`, and builds `packageDeb` + `packageRpm`
-   with `RIMALUX_PACKAGING_JDK=$JAVA_HOME`.
-3. **windows** — checks out the new tag, installs WiX (best-effort), and builds `packageExe`
-   and `packageMsi`.
-4. **publish** — downloads both artifact sets and publishes the GitHub release at the new tag
+2. **linux** — checks out the new tag, builds the jpackage app-image, wraps it with
+   `appimagetool`, and names it `rimalux_desktop_<version>_<YYYYMMDD>.AppImage`.
+3. **windows** — checks out the new tag, installs WiX (best-effort), and builds the EXE
+   installer as `rimalux_desktop_<version>_<YYYYMMDD>.exe`.
+4. **publish** — downloads both artifacts and publishes the GitHub release at the new tag
    (marked latest).
 
-Release asset names use:
-
-```text
-rimalux_desktop_<version>_<YYYYMMDD>.<ext>
-```
-
-for example `rimalux_desktop_0.1.1_20261109.rpm`, `.deb`, `.exe`, `.msi`. The installed
-application/executable keeps the stable name `Rimalux`.
+Only those two assets are published. The installed application keeps the stable name `Rimalux`.
 
 Version source of truth:
 
@@ -133,9 +143,8 @@ Version source of truth:
 The workflow needs `contents: write` and a `main` branch that allows the bot push. On protected
 branches, allow `github-actions[bot]` to push or run the workflow from an unprotected branch.
 
-Windows MSI packaging is marked best-effort in CI because the WiX toolchain and interactive
-desktop availability vary between runners. Treat a missing MSI as a CI warning, not a code
-failure, until a Windows runner is verified.
+The Windows job needs WiX; the install step is best-effort, but the EXE build itself must
+succeed for the release to publish.
 
 ## Diagnostics and support
 

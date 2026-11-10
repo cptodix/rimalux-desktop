@@ -70,16 +70,17 @@
 - [x] Update checker (`--check-updates`, Settings → Support)
 - [x] Native Linux StatusNotifierItem tray
 - [x] Options modal floats/animates above the media controls
-- [x] Apply To popup with per-display / All Displays / All Displays Separate
+- [x] Apply modal with per-display / All Displays / All Displays Separate + Save Wallpaper
 - [x] Display-agnostic preview and Auto Match native resolution (4K fallback)
 - [x] Advanced Settings rename, resolution popup, folder grid, identify
 - [x] Auto-Change Status moved to Advanced Settings; Apply To list parity
 - [x] Options left sheet keeps its width; no back button; page rows use a left chevron
 - [x] Advanced Settings bottom section; popup rows for Language/Resolution/Fit Mode
 - [x] Popups center on their triggering row
-- [x] CI build + tag-driven release automation
+- [x] Single manual release workflow: version bump, tag, AppImage + EXE, publish
+- [x] One-line install scripts (`scripts/install.sh`, `scripts/install.ps1`)
+- [x] Update checker download/install flow (AppImage self-replace, Windows installer handoff)
 - [ ] Signed installers (needs release certificate/secrets)
-- [ ] Update checker download/install flow
 
 ## Non-goals
 

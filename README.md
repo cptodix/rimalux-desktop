@@ -17,6 +17,31 @@ background auto-change.
 
 ---
 
+## Install
+
+Linux (x86_64) — installs the AppImage plus a launcher and menu entry:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cptodix/rimalux-desktop/main/scripts/install.sh | bash
+```
+
+Windows — downloads the latest installer and runs it:
+
+```powershell
+irm https://raw.githubusercontent.com/cptodix/rimalux-desktop/main/scripts/install.ps1 | iex
+```
+
+Pin a version with `RIMALUX_VERSION=0.1.2` (Linux) or `$env:RIMALUX_VERSION = "0.1.2"` (Windows).
+
+Releases ship two assets: `rimalux_desktop_<version>_<YYYYMMDD>.AppImage` and
+`rimalux_desktop_<version>_<YYYYMMDD>.exe`.
+
+Rimalux checks GitHub releases from **Advanced Settings → Support**. When a newer release
+exists, **Install Update** downloads it and hands over: the AppImage replaces itself and
+relaunches, and the Windows installer runs after the app exits.
+
+---
+
 ## What is implemented today
 
 - Pure Kotlin wallpaper engine synced from the Android project.
@@ -32,13 +57,13 @@ background auto-change.
 - Windows wallpaper backend: `SystemParametersInfoW` global apply plus `IDesktopWallpaper`
   per-monitor apply, with HKCU Run autostart.
 - Fullscreen preview (F11 or double-click) and a display Identify overlay.
-- Apply To popup with per-display, All Displays, and All Displays Separate targets.
+- Apply modal with per-display, All Displays, All Displays Separate targets, and Save Wallpaper.
 - Display-agnostic preview; Auto Match resolution uses each display's native resolution with a
   4K fallback.
-- Support tooling: diagnostics bundle export, GitHub update check, and an optional systemd user
-  timer / Windows Task Scheduler mode.
-- Single manual release workflow: bumps the version, creates the tag, builds DEB/RPM/EXE/MSI,
-  and publishes the GitHub release.
+- Support tooling: diagnostics bundle export, GitHub update check with in-place install, and an
+  optional systemd user timer / Windows Task Scheduler mode.
+- Single manual release workflow: bumps the version, creates the tag, builds the AppImage and
+  Windows installer, and publishes the GitHub release.
 - Live Skia-rendered previews with exact true-black measurement.
 - 80 patterns, 41 palettes, custom palettes, true-black slider/range.
 - Solid and gradient color fills.
