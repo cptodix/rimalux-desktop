@@ -600,6 +600,16 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
+                    text = "${localizedStringOr("desktop_license", "License")}: " +
+                        localizedStringOr("desktop_license_name", "PolyForm Perimeter 1.0.1"),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "https://polyformproject.org/licenses/perimeter/1.0.1",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
                     text = localizedStringOr(
                         "desktop_shortcuts",
                         "Keyboard Shortcuts"

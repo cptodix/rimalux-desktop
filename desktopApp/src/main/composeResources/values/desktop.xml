@@ -227,6 +227,8 @@
     <string name="desktop_about">About</string>
     <string name="desktop_version">Version</string>
     <string name="desktop_engine_commit">Engine Commit</string>
+    <string name="desktop_license">License</string>
+    <string name="desktop_license_name">PolyForm Perimeter 1.0.1</string>
     <string name="desktop_phase2_note">Auto-change, tray mode, and Start at Login arrive in Phase 2. Save PNG or use Apply for now.</string>
     <string name="desktop_shortcuts">Keyboard Shortcuts</string>
     <string name="desktop_shortcut_randomize">Space — Randomize</string>

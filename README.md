@@ -159,3 +159,13 @@ rimalux-desktop/
 | [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | Detailed agentic checklist |
 | [`docs/VERIFICATION.md`](docs/VERIFICATION.md) | Phase 0/1 verification log |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Architecture decision records |
+
+## License
+
+PolyForm Perimeter License 1.0.1 — <https://polyformproject.org/licenses/perimeter/1.0.1>.
+
+Required Notice: Copyright © 2026 Cptodix Studio
+
+You may use, modify and distribute Rimalux for any purpose except providing a product that
+competes with it. Third-party components keep their own licenses; see
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

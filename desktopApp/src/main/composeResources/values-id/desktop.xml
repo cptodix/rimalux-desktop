@@ -227,6 +227,8 @@
     <string name="desktop_about">Tentang</string>
     <string name="desktop_version">Versi</string>
     <string name="desktop_engine_commit">Commit Engine</string>
+    <string name="desktop_license">Lisensi</string>
+    <string name="desktop_license_name">PolyForm Perimeter 1.0.1</string>
     <string name="desktop_phase2_note">Auto-change, mode tray, dan Mulai saat Login hadir di Fase 2. Untuk sekarang gunakan Simpan PNG atau Terapkan.</string>
     <string name="desktop_shortcuts">Pintasan Keyboard</string>
     <string name="desktop_shortcut_randomize">Space — Acak</string>

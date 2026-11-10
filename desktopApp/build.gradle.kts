@@ -97,6 +97,7 @@ compose.desktop {
                 debMaintainer = "cptodix@users.noreply.github.com"
                 appCategory = "Graphics"
                 menuGroup = "Graphics"
+                rpmLicenseType = "LicenseRef-PolyForm-Perimeter-1.0.1"
                 shortcut = true
                 iconFile.set(project.file("packaging/rimalux.png"))
             }

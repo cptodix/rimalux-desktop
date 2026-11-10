@@ -93,7 +93,8 @@ jobs:
           appdir="AppDir"
           rm -rf "$appdir"
           mkdir -p "$appdir/usr" "$appdir/usr/share/applications" \
-            "$appdir/usr/share/icons/hicolor/256x256/apps" dist
+            "$appdir/usr/share/icons/hicolor/256x256/apps" \
+            "$appdir/usr/share/licenses/rimalux" "$appdir/usr/share/doc/rimalux" dist
 
           app_image_dir="$(find desktopApp/build/compose/binaries/main/app -mindepth 1 -maxdepth 1 -type d | head -1)"
           [ -n "$app_image_dir" ] || { echo "jpackage app image not found" >&2; exit 1; }
@@ -106,6 +107,8 @@ jobs:
           cp desktopApp/packaging/rimalux.png "$appdir/rimalux.png"
           cp desktopApp/packaging/rimalux.png \
             "$appdir/usr/share/icons/hicolor/256x256/apps/rimalux.png"
+          cp LICENSE "$appdir/usr/share/licenses/rimalux/LICENSE"
+          cp THIRD_PARTY_NOTICES.md "$appdir/usr/share/doc/rimalux/THIRD_PARTY_NOTICES.md"
 
           cat > "$appdir/rimalux.desktop" <<'EOF'
           [Desktop Entry]

@@ -18,6 +18,7 @@ requirements that keep the desktop port aligned with the Android app.
 - **Engine package:** `com.cptodix.rimalux.oled.wallpaper.engine` (kept identical to Android for sync)
 - **Repository:** `cptodix/rimalux-desktop`
 - **Origin:** Android app `cptodix/rimalux`
+- **License:** PolyForm Perimeter 1.0.1 (`LICENSE`)
 - **Current phase:** Phase 4 implemented; Windows and multi-monitor hardware verification pending
 - **Completed:** Phase 0 + Phase 1 (desktop MVP, locked full-bleed UI, accepted by the user),
   Phase 2 (auto-change + tray), Phase 3 (Windows backend + CI packaging), Phase 4 (fullscreen,

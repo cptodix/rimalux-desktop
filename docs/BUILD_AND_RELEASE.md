@@ -91,6 +91,15 @@ works locally but is not published. Cross-compilation is not supported by jpacka
 - `scripts/install.ps1` — resolves the latest release (or `RIMALUX_VERSION`), downloads the EXE
   and runs it (`/quiet`, falling back to the interactive wizard).
 
+### License and notices
+
+Rimalux Desktop is licensed under the PolyForm Perimeter License 1.0.1 (`LICENSE`). The AppImage
+bundles it at `usr/share/licenses/rimalux/LICENSE` together with
+`usr/share/doc/rimalux/THIRD_PARTY_NOTICES.md`. The About card shows the license name and URL.
+
+PolyForm Perimeter has no SPDX identifier, so packaging metadata uses the custom reference
+`LicenseRef-PolyForm-Perimeter-1.0.1`.
+
 ### In-app updates
 
 **Advanced Settings → Support → Check for Updates** reads the GitHub releases API and compares
