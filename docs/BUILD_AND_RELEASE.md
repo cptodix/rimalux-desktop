@@ -87,9 +87,11 @@ works locally but is not published. Cross-compilation is not supported by jpacka
 
 - `scripts/install.sh` — resolves the latest release (or `RIMALUX_VERSION`), downloads the
   AppImage to `~/.local/share/rimalux/rimalux.AppImage`, symlinks `~/.local/bin/rimalux`, writes
-  `~/.local/share/applications/rimalux.desktop`, and installs the icon.
+  `~/.local/share/applications/rimalux.desktop`, and installs the icon. `-uninstall` removes the
+  app, launcher, menu entry, and icon, keeping settings and cached wallpapers.
 - `scripts/install.ps1` — resolves the latest release (or `RIMALUX_VERSION`), downloads the EXE
-  and runs it (`/quiet`, falling back to the interactive wizard).
+  and runs it (`/quiet`, falling back to the interactive wizard). `-Uninstall` runs the registered
+  uninstaller quietly.
 
 ### License and notices
 

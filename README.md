@@ -40,6 +40,18 @@ Rimalux checks GitHub releases from **Advanced Settings → Support**. When a ne
 exists, **Install Update** downloads it and hands over: the AppImage replaces itself and
 relaunches, and the Windows installer runs after the app exits.
 
+Uninstall with the same script plus the flag:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cptodix/rimalux-desktop/main/scripts/install.sh | bash -s -- -uninstall
+```
+
+```powershell
+iex "& { $(irm https://raw.githubusercontent.com/cptodix/rimalux-desktop/main/scripts/install.ps1) } -Uninstall"
+```
+
+Settings and cached wallpapers are left in place.
+
 ---
 
 ## What is implemented today

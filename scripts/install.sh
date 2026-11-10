@@ -2,14 +2,15 @@
 # Rimalux Desktop installer for Linux.
 #
 #   curl -fsSL https://raw.githubusercontent.com/cptodix/rimalux-desktop/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/cptodix/rimalux-desktop/main/scripts/install.sh | bash -s -- -uninstall
 #
 # Optional:
 #   RIMALUX_VERSION=0.1.2   install a specific version
 #   RIMALUX_BIN_DIR=...     where the launcher symlink goes (default ~/.local/bin)
+#   -uninstall              remove the app, launcher, menu entry, and icon
 set -euo pipefail
 
 REPO="${RIMALUX_REPOSITORY:-cptodix/rimalux-desktop}"
-VERSION="${RIMALUX_VERSION:-${1:-latest}}"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 APP_DIR="$DATA_HOME/rimalux"
 APP_IMAGE="$APP_DIR/rimalux.AppImage"
@@ -17,13 +18,63 @@ BIN_DIR="${RIMALUX_BIN_DIR:-$HOME/.local/bin}"
 ICON_DIR="$DATA_HOME/icons/hicolor/256x256/apps"
 DESKTOP_DIR="$DATA_HOME/applications"
 
+UNINSTALL=0
+VERSION="latest"
+for arg in "$@"; do
+    case "$arg" in
+        -uninstall | --uninstall) UNINSTALL=1 ;;
+        -h | --help)
+            echo "usage: install.sh [-uninstall] [version]"
+            exit 0
+            ;;
+        -*)
+            echo "error: unknown option $arg" >&2
+            exit 2
+            ;;
+        *) VERSION="$arg" ;;
+    esac
+done
+VERSION="${RIMALUX_VERSION:-$VERSION}"
+
 fail() {
     echo "error: $*" >&2
     exit 1
 }
 
+refresh_desktop_caches() {
+    command -v update-desktop-database >/dev/null 2>&1 &&
+        update-desktop-database "$DESKTOP_DIR" >/dev/null 2>&1 || true
+    command -v gtk-update-icon-cache >/dev/null 2>&1 &&
+        gtk-update-icon-cache -f -t "$DATA_HOME/icons/hicolor" >/dev/null 2>&1 || true
+}
+
+if [ "$UNINSTALL" -eq 1 ]; then
+    echo "Uninstalling Rimalux…"
+
+    if command -v pgrep >/dev/null 2>&1 && pgrep -f "$APP_IMAGE" >/dev/null 2>&1; then
+        echo "note: Rimalux is running; quit it to finish uninstalling."
+    fi
+
+    if [ -L "$BIN_DIR/rimalux" ]; then
+        target="$(readlink "$BIN_DIR/rimalux")"
+        case "$target" in
+            "$APP_IMAGE" | "$APP_DIR"/*) rm -f "$BIN_DIR/rimalux" ;;
+        esac
+    fi
+
+    rm -f "$APP_IMAGE" "$APP_DIR/.rimalux.AppImage.part"
+    rmdir "$APP_DIR" 2>/dev/null || true
+    rm -f "$DESKTOP_DIR/rimalux.desktop" "$ICON_DIR/rimalux.png"
+    refresh_desktop_caches
+
+    echo "Removed the app, launcher, menu entry, and icon."
+    echo "Settings and cached wallpapers were kept:"
+    echo "  ${XDG_CONFIG_HOME:-$HOME/.config}/rimalux"
+    echo "  ${XDG_CACHE_HOME:-$HOME/.cache}/rimalux"
+    exit 0
+fi
+
 command -v curl >/dev/null 2>&1 || fail "curl is required"
-command -v tar >/dev/null 2>&1 || true
 
 case "$(uname -m)" in
     x86_64 | amd64) ;;
@@ -61,10 +112,7 @@ trap - EXIT
 ln -sfn "$APP_IMAGE" "$BIN_DIR/rimalux"
 
 ICON_URL="https://raw.githubusercontent.com/$REPO/$TAG/desktopApp/packaging/rimalux.png"
-if curl -fsSL -o "$ICON_DIR/rimalux.png" "$ICON_URL" 2>/dev/null; then
-    command -v gtk-update-icon-cache >/dev/null 2>&1 &&
-        gtk-update-icon-cache -f -t "$DATA_HOME/icons/hicolor" >/dev/null 2>&1 || true
-fi
+curl -fsSL -o "$ICON_DIR/rimalux.png" "$ICON_URL" 2>/dev/null || true
 
 cat > "$DESKTOP_DIR/rimalux.desktop" <<EOF
 [Desktop Entry]
@@ -78,8 +126,7 @@ Categories=Graphics;
 StartupWMClass=Rimalux
 EOF
 
-command -v update-desktop-database >/dev/null 2>&1 &&
-    update-desktop-database "$DESKTOP_DIR" >/dev/null 2>&1 || true
+refresh_desktop_caches
 
 echo
 echo "Rimalux $TAG installed:"
