@@ -39,4 +39,32 @@ class AutostartManagerTest {
         assertFalse(manager.isEnabled())
         assertFalse(Files.exists(paths.autostartFile))
     }
+
+    @Test
+    fun appImagePathIsPreferredOverTransientJPackagePath() {
+        val root = Files.createTempDirectory("rimalux-autostart-appimage-test")
+        val paths = PlatformPaths(
+            osName = "Linux",
+            environment = mapOf(
+                "XDG_CONFIG_HOME" to root.resolve("config").toString(),
+                "XDG_CACHE_HOME" to root.resolve("cache").toString(),
+                "XDG_STATE_HOME" to root.resolve("state").toString()
+            ),
+            userHome = root
+        )
+        val appImage = root.resolve("apps/rimalux.AppImage").toString()
+        val manager = AutostartManager(
+            paths = paths,
+            executablePath = null,
+            appImagePath = appImage,
+            osName = "Linux"
+        )
+
+        manager.setEnabled(true).getOrThrow()
+        val content = Files.readString(paths.autostartFile)
+        assertTrue(content.contains("Exec=\"$appImage\" --background"))
+
+        manager.setEnabled(false).getOrThrow()
+        assertFalse(Files.exists(paths.autostartFile))
+    }
 }

@@ -103,6 +103,11 @@ X-GNOME-Autostart-enabled=true
 Remove the file when disabled. Recreate it on startup if `runAtLogin` is true but the file is
 missing (e.g., after reinstall).
 
+The executable path is resolved in this order: an explicit path, the `APPIMAGE` environment
+variable (Linux AppImage installs), then `jpackage.app-path`. Inside an AppImage,
+`jpackage.app-path` points at the temporary `/tmp/.mount_*` directory, so the AppImage file
+itself is used to keep the entry valid across reboots.
+
 ### Windows
 
 Write `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `Rimalux`:

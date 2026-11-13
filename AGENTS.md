@@ -215,6 +215,8 @@ See [`docs/LINUX_WALLPAPER_BACKENDS.md`](docs/LINUX_WALLPAPER_BACKENDS.md) and
 - Start at Login:
   - Linux: `~/.config/autostart/rimalux.desktop`
   - Windows: `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+  - Always launch with `--background`. On Linux AppImage installs use `$APPIMAGE` for the
+    executable path, never `jpackage.app-path` (that points into the temporary mount).
 - Single instance: second launch focuses the existing window.
 - Quit warns if auto-change is enabled.
 - `--background` starts hidden; `--rotate-now` performs one headless rotation.

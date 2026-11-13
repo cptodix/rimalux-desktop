@@ -14,6 +14,7 @@ import java.nio.file.Path
 class AutostartManager(
     private val paths: PlatformPaths = PlatformPaths(),
     private val executablePath: String? = null,
+    private val appImagePath: String? = System.getenv("APPIMAGE"),
     private val osName: String = System.getProperty("os.name").orEmpty()
 ) {
     private val isWindows = osName.lowercase().contains("win")
@@ -79,10 +80,14 @@ class AutostartManager(
     private fun resolveExecutable(): String? {
         val explicit = executablePath?.takeIf { it.isNotBlank() }
         if (explicit != null) return explicit
-        val jpackagePath = System.getProperty("jpackage.app-path")
-            ?.takeIf { it.isNotBlank() }
-        if (jpackagePath != null) return jpackagePath
-        return null
+        // Inside an AppImage, jpackage.app-path points at the temporary squashfs mount
+        // (/tmp/.mount_...), which disappears after exit. The AppImage file itself is the
+        // stable path to launch at login.
+        if (isLinux) {
+            val appImage = appImagePath?.takeIf { it.isNotBlank() }
+            if (appImage != null) return appImage
+        }
+        return System.getProperty("jpackage.app-path")?.takeIf { it.isNotBlank() }
     }
 
     private fun linuxDesktopEntry(executable: String): String = buildString {
